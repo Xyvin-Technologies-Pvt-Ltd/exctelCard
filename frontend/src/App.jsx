@@ -8,20 +8,15 @@ import Layout from "./layout/Layout";
 import "./App.css";
 import Activity from "./pages/Activity";
 import Admin from "./pages/Admin";
+import ShareView from "./pages/ShareView";
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route
-            path="/login"
-            element={
-              <main>
-                <Login />
-              </main>
-            }
-          />
+          <Route path="/login" element={<main><Login /></main>} />
+          <Route path="/share/:id" element={<main><ShareView /></main>} />
           <Route
             path="*"
             element={

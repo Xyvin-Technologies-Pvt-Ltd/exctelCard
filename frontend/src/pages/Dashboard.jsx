@@ -403,9 +403,9 @@ const DashboardPage = () => {
         {/* QR Code Section */}
         <section className="bg-white rounded-lg shadow-md border border-gray-100 p-8 lg:col-span-1">
           <div className="text-center">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Your QR Code</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 mt-4">Your QR Code</h2>
             <div className="space-y-4">
-              <div className="flex justify-center p-4 bg-white rounded-lg border border-gray-200">
+              <div className="flex justify-center p-4 bg-white rounded-lg border border-gray-200 mt-10">
                 <QRCodeSVG
                   id="qr-canvas"
                   value={staticQRCodeData}
@@ -416,7 +416,7 @@ const DashboardPage = () => {
                   level="H"
                 />
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+              <div className="flex flex-col sm:flex-row gap-2 mt-28">
                 <Button
                   variant="primary"
                   className="flex-1 flex items-center justify-center py-2 text-orange-600 bg-orange-100 hover:bg-orange-200"
@@ -462,7 +462,7 @@ const DashboardPage = () => {
                   Copy Link
                 </Button>
               </div>
-              <p className="text-sm text-gray-500 mt-4">
+              <p className="text-sm text-gray-500 mt-6">
                 Share your QR code on your business cards, email signature, or social media.
               </p>
             </div>
