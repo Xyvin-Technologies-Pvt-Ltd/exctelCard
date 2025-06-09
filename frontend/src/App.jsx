@@ -5,11 +5,11 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Login from "./pages/login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import QRCode from "./pages/QRCode";
-import Layout from "./layout/Layout";
+import Layout from "./layout/LayoutModern";
+import Login from "./pages/LoginModern";
 import "./App.css";
 import Activity from "./pages/Activity";
 import Admin from "./pages/Admin";

@@ -1,62 +1,79 @@
 import React, { useState } from "react";
-import { FaCopy, FaCheck, FaQrcode, FaLink, FaShareAlt } from "react-icons/fa";
+import {
+  FaCopy,
+  FaCheck,
+  FaQrcode,
+  FaLink,
+  FaShareAlt,
+  FaLock,
+} from "react-icons/fa";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
+import Input from "../ui/Input";
+import { useAuth } from "../contexts/AuthContext";
 
-const Input = ({ label, name, type = "text", value, onChange, required = false }) => (
-  <div className="mb-4 text-left">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1 text-left">
-      {label} {required && <span className="text-red-500">*</span>}
+// Read-only field component for Entra ID data
+const ReadOnlyField = ({ label, value, helperText }) => (
+  <div className="space-y-1">
+    <label className="block text-sm font-medium text-gray-700">
+      {label}
+      <FaLock
+        className="inline ml-2 text-xs text-gray-400"
+        title="This field is managed by your organization"
+      />
     </label>
-    <input
-      type={type}
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-left"
-      required={required}
-    />
+    <div className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700">
+      {value || "Not provided"}
+    </div>
+    {helperText && <p className="text-xs text-gray-500">{helperText}</p>}
   </div>
 );
 
 const Profile = () => {
-  // Static user data
-  const staticUser = {
+  const { user: authUser } = useAuth();
+
+  // Use real Entra ID data or fallback to demo data
+  const entraidUser = authUser || {
     name: "Jane Doe",
+    email: "jane.doe@exctel.com",
     department: "Engineering",
     jobTitle: "Senior Developer",
+    tenantId: "12345678-1234-1234-1234-123456789012",
+  };
+
+  // Static/demo data for fields not in Entra ID
+  const localUserData = {
     phone: "+1 (555) 123-4567",
     linkedIn: "https://linkedin.com/in/janedoe",
     profileImage: "",
-    shareId: "abc123"
+    shareId: "abc123",
   };
 
-  // State for form fields
+  // State for ONLY editable fields (not managed by Entra ID)
   const [formData, setFormData] = useState({
-    name: staticUser.name,
-    department: staticUser.department,
-    jobTitle: staticUser.jobTitle,
-    phone: staticUser.phone,
-    linkedIn: staticUser.linkedIn,
-    profileImage: staticUser.profileImage
+    phone: localUserData.phone,
+    linkedIn: localUserData.linkedIn,
+    profileImage: localUserData.profileImage,
   });
 
   // State for UI interactions
   const [copied, setCopied] = useState(false);
   const [directLinkCopied, setDirectLinkCopied] = useState(false);
-  const [hasShareId, setHasShareId] = useState(!!staticUser.shareId);
+  const [hasShareId, setHasShareId] = useState(!!localUserData.shareId);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // URLs for sharing
-  const shareableUrl = `${window.location.origin}/profile/jane.doe`;
-  const directShareableUrl = `${window.location.origin}/share/${staticUser.shareId}`;
+  // URLs for sharing (use email as the profile identifier)
+  const profileSlug = entraidUser.email
+    ? entraidUser.email.split("@")[0]
+    : "user";
+  const shareableUrl = `${window.location.origin}/profile/${profileSlug}`;
+  const directShareableUrl = `${window.location.origin}/share/${localUserData.shareId}`;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -81,44 +98,75 @@ const Profile = () => {
     }, 1000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    // Just show an alert in the static version
-    alert("Profile updated successfully!");
+
+    try {
+      // Only submit editable fields - Entra ID fields are read-only
+      const dataToSubmit = {
+        // Include Entra ID data for context (but won't be updated)
+        userId: entraidUser.email,
+        // Only these fields can be updated
+        phone: formData.phone,
+        linkedIn: formData.linkedIn,
+        profileImage: formData.profileImage,
+      };
+
+      console.log("📝 Submitting editable profile data:", dataToSubmit);
+
+      // TODO: Replace with actual API call
+      // const response = await fetch('/api/profile/update', {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(dataToSubmit)
+      // });
+
+      alert(
+        "Editable profile fields updated successfully!\n\nUpdated:\n- Phone: " +
+          formData.phone +
+          "\n- LinkedIn: " +
+          formData.linkedIn +
+          "\n- Profile Image: " +
+          (formData.profileImage || "Not set")
+      );
+    } catch (error) {
+      console.error("❌ Error updating profile:", error);
+      alert("Failed to update profile. Please try again.");
+    }
   };
 
   const handleReset = () => {
-    // Reset form to initial values
+    // Reset only editable fields (Entra ID fields cannot be reset)
     setFormData({
-      name: staticUser.name,
-      department: staticUser.department,
-      jobTitle: staticUser.jobTitle,
-      phone: staticUser.phone,
-      linkedIn: staticUser.linkedIn,
-      profileImage: staticUser.profileImage
+      phone: localUserData.phone,
+      linkedIn: localUserData.linkedIn,
+      profileImage: localUserData.profileImage,
     });
   };
 
   return (
-    <div className="max-w-3xl mx-auto text-left">
-      <div className="mb-6 text-left">
-        <h1 className="text-2xl font-bold text-gray-800 text-left">Edit Profile</h1>
-        <p className="text-gray-600 text-left">Update your profile information</p>
+    <div className="max-w-3xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Edit Profile - {entraidUser.name}
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Update your profile information. Some fields are managed by your
+          organization and cannot be edited.
+        </p>
       </div>
 
       <Card className="mb-6">
         <div className="p-4 text-left">
           <h2 className="text-xl font-semibold mb-4 flex items-center text-left">
-            <FaLink className="mr-2 text-indigo-600" /> Your Shareable Profile Link
+            <FaLink className="mr-2 text-indigo-600" /> Your Shareable Profile
+            Link
           </h2>
           <div className="flex items-center space-x-2">
             <div className="flex-1 bg-gray-100 p-3 rounded text-sm truncate text-left">
               {shareableUrl}
             </div>
-            <Button
-              onClick={copyToClipboard}
-              className="flex items-center"
-            >
+            <Button onClick={copyToClipboard} className="flex items-center">
               {copied ? (
                 <>
                   <FaCheck className="mr-1" /> Copied!
@@ -131,7 +179,8 @@ const Profile = () => {
             </Button>
           </div>
           <div className="mt-4 text-sm text-gray-600 text-left">
-            Share this link to let others view your professional profile. They will see your public information.
+            Share this link to let others view your professional profile. They
+            will see your public information.
           </div>
         </div>
       </Card>
@@ -148,10 +197,7 @@ const Profile = () => {
                 <div className="flex-1 bg-gray-100 p-3 rounded text-sm truncate text-left">
                   {directShareableUrl}
                 </div>
-                <Button
-                  onClick={copyDirectLink}
-                  className="flex items-center"
-                >
+                <Button onClick={copyDirectLink} className="flex items-center">
                   {directLinkCopied ? (
                     <>
                       <FaCheck className="mr-1" /> Copied!
@@ -164,14 +210,16 @@ const Profile = () => {
                 </Button>
               </div>
               <div className="mt-4 text-sm text-gray-600 text-left">
-                This direct link is easier to share and doesn't require scanning a QR code. 
-                Anyone with this link can view your business card information.
+                This direct link is easier to share and doesn't require scanning
+                a QR code. Anyone with this link can view your business card
+                information.
               </div>
             </>
           ) : (
             <>
               <p className="text-gray-600 mb-4 text-left">
-                Generate a direct shareable link that's easier to share than a QR code.
+                Generate a direct shareable link that's easier to share than a
+                QR code.
               </p>
               <Button
                 onClick={handleGenerateShareId}
@@ -202,47 +250,60 @@ const Profile = () => {
       </Card>
 
       <Card>
-        <div className="space-y-4 p-4 text-left">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
+        <Card.Header>
+          <Card.Title>Profile Information</Card.Title>
+          <Card.Description>
+            Fields with a lock icon are managed by your organization and cannot
+            be edited.
+          </Card.Description>
+        </Card.Header>
+
+        <Card.Content>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Entra ID Managed Fields (Read-only) */}
+            <ReadOnlyField
               label="Full Name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
+              value={entraidUser.name}
+              helperText="Managed by your organization"
             />
 
-            <Input
+            <ReadOnlyField
+              label="Email Address"
+              value={entraidUser.email}
+              helperText="Your organization email"
+            />
+
+            <ReadOnlyField
               label="Department"
-              name="department"
-              value={formData.department}
-              onChange={handleInputChange}
-              required
+              value={entraidUser.department}
+              helperText="Set by your organization"
             />
 
-            <Input
+            <ReadOnlyField
               label="Job Title"
-              name="jobTitle"
-              value={formData.jobTitle}
-              onChange={handleInputChange}
-              required
+              value={entraidUser.jobTitle}
+              helperText="Managed by HR"
             />
 
+            {/* Editable Fields */}
             <Input
               label="Phone Number"
               name="phone"
               type="tel"
               value={formData.phone}
               onChange={handleInputChange}
+              helperText="Your contact phone number"
+              placeholder="+1 (555) 123-4567"
             />
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-1">
               <Input
                 label="LinkedIn Profile URL"
                 name="linkedIn"
                 value={formData.linkedIn}
                 onChange={handleInputChange}
                 placeholder="https://linkedin.com/in/yourprofile"
+                helperText="Optional: Your LinkedIn profile"
               />
             </div>
 
@@ -253,23 +314,20 @@ const Profile = () => {
                 value={formData.profileImage}
                 onChange={handleInputChange}
                 placeholder="https://example.com/profile.jpg"
+                helperText="Optional: URL to your profile picture"
               />
             </div>
           </div>
+        </Card.Content>
 
-          <div className="pt-4 border-t border-gray-200 flex justify-end space-x-4">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleReset}
-            >
-              Reset
-            </Button>
-            <Button type="button" variant="primary" onClick={handleSubmit}>
-              Save Changes
-            </Button>
-          </div>
-        </div>
+        <Card.Footer>
+          <Button type="button" variant="secondary" onClick={handleReset}>
+            Reset Editable Fields
+          </Button>
+          <Button type="button" variant="primary" onClick={handleSubmit}>
+            Save Changes
+          </Button>
+        </Card.Footer>
       </Card>
     </div>
   );

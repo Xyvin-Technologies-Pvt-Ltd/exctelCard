@@ -332,6 +332,94 @@ const debugSessions = async (req, res) => {
   });
 };
 
+/**
+ * Admin login with email and password
+ */
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log("🔄 Admin login attempt for:", email);
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Get admin credentials from environment variables
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    console.log("🔍 Checking admin credentials...");
+    console.log("  Expected email:", adminEmail);
+    console.log("  Provided email:", email);
+
+    if (!adminEmail || !adminPassword) {
+      console.error("❌ Admin credentials not configured in environment");
+      return res.status(500).json({
+        success: false,
+        message: "Admin authentication not configured",
+      });
+    }
+
+    // Validate credentials
+    if (email !== adminEmail || password !== adminPassword) {
+      console.error("❌ Invalid admin credentials provided");
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin credentials",
+      });
+    }
+
+    console.log("✅ Admin credentials validated successfully");
+
+    // Create admin user object
+    const adminUser = {
+      id: "admin-" + require("crypto").randomBytes(8).toString("hex"),
+      email: adminEmail,
+      name: "Super Administrator",
+      role: "admin",
+      tenantId: "admin",
+      loginType: "password",
+    };
+
+    // Generate JWT token for admin
+    const jwt = require("jsonwebtoken");
+    const adminToken = jwt.sign(
+      {
+        userId: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.name,
+        role: adminUser.role,
+        tenantId: adminUser.tenantId,
+        loginType: adminUser.loginType,
+      },
+      process.env.JWT_SECRET || "your-jwt-secret",
+      { expiresIn: "8h" } // Shorter expiry for admin sessions
+    );
+
+    console.log("✅ Admin JWT token generated");
+    console.log("🚀 Admin login successful");
+
+    res.json({
+      success: true,
+      token: adminToken,
+      user: adminUser,
+      message: "Admin login successful",
+    });
+  } catch (error) {
+    console.error("❌ Error during admin login:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error during admin login",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   initiateLogin,
   handleCallback,
@@ -339,4 +427,5 @@ module.exports = {
   logout,
   verifyToken,
   debugSessions,
+  adminLogin,
 };

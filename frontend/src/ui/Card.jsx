@@ -1,57 +1,102 @@
 import React from "react";
+import { cn } from "../utils/cn";
 
 const Card = ({
   children,
   className = "",
-  title,
-  titleClassName = "",
-  bodyClassName = "",
   variant = "default",
-  hover = false,
+  padding = "md",
+  hoverable = false,
   ...props
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
-      case "primary":
-        return "border-primary-100 bg-primary-50";
-      case "secondary":
-        return "border-secondary-100 bg-secondary-50";
-      case "success":
-        return "border-green-100 bg-green-50";
-      case "danger":
-        return "border-red-100 bg-red-50";
-      case "warning":
-        return "border-yellow-100 bg-yellow-50";
-      case "info":
-        return "border-blue-100 bg-blue-50";
-      case "light":
-        return "border-gray-100 bg-gray-50";
-      case "dark":
-        return "border-gray-700 bg-gray-800 text-white";
+      case "elevated":
+        return "bg-white shadow-lg border border-gray-100";
+      case "outline":
+        return "bg-white border-2 border-gray-200 shadow-none";
+      case "ghost":
+        return "bg-transparent border-none shadow-none";
       default:
-        return "border-gray-200 bg-white";
+        return "bg-white shadow-md border border-gray-100";
     }
   };
 
-  const hoverClasses = hover
-    ? "transition-transform duration-300 hover:shadow-lg hover:-translate-y-1"
-    : "";
+  const getPaddingClasses = () => {
+    switch (padding) {
+      case "none":
+        return "p-0";
+      case "sm":
+        return "p-4";
+      case "md":
+        return "p-6";
+      case "lg":
+        return "p-8";
+      default:
+        return "p-6";
+    }
+  };
+
+  const cardClasses = cn(
+    // Base styles
+    "rounded-xl transition-all duration-200 ease-in-out",
+
+    // Variant styles
+    getVariantClasses(),
+
+    // Padding
+    getPaddingClasses(),
+
+    // Hover effect
+    hoverable && "hover:shadow-lg hover:-translate-y-1 cursor-pointer",
+
+    className
+  );
 
   return (
-    <div
-      className={`rounded-lg border shadow-sm overflow-hidden ${getVariantClasses()} ${hoverClasses} ${className}`}
-      {...props}
-    >
-      {title && (
-        <div
-          className={`px-4 py-3 border-b border-gray-200 font-medium ${titleClassName}`}
-        >
-          {title}
-        </div>
-      )}
-      <div className={`p-4 ${bodyClassName}`}>{children}</div>
+    <div className={cardClasses} {...props}>
+      {children}
     </div>
   );
 };
+
+// Card sub-components for better composition
+const CardHeader = ({ children, className = "" }) => (
+  <div className={cn("mb-4 pb-4 border-b border-gray-100", className)}>
+    {children}
+  </div>
+);
+
+const CardTitle = ({ children, className = "" }) => (
+  <h3 className={cn("text-lg font-semibold text-gray-900", className)}>
+    {children}
+  </h3>
+);
+
+const CardDescription = ({ children, className = "" }) => (
+  <p className={cn("text-sm text-gray-600 mt-1", className)}>{children}</p>
+);
+
+const CardContent = ({ children, className = "" }) => (
+  <div className={cn("", className)}>{children}</div>
+);
+
+const CardFooter = ({ children, className = "" }) => (
+  <div
+    className={cn(
+      "mt-4 pt-4 border-t border-gray-100 flex justify-end gap-2",
+      className
+    )}
+  >
+    {children}
+  </div>
+);
+
+// Export all components
+Card.Header = CardHeader;
+Card.Title = CardTitle;
+Card.Description = CardDescription;
+Card.Content = CardContent;
+Card.Footer = CardFooter;
 
 export default Card;

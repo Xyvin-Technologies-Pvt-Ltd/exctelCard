@@ -153,6 +153,61 @@ router.post("/verify", authController.verifyToken);
 
 /**
  * @swagger
+ * /api/auth/admin/login:
+ *   post:
+ *     summary: Admin login with email and password
+ *     tags: [Authentication]
+ *     description: Allows super admin to login using email/password credentials
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Admin email address
+ *               password:
+ *                 type: string
+ *                 description: Admin password
+ *     responses:
+ *       200:
+ *         description: Admin login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [admin]
+ *       401:
+ *         description: Invalid credentials
+ *       400:
+ *         description: Missing email or password
+ */
+router.post("/admin/login", authController.adminLogin);
+
+/**
+ * @swagger
  * /api/auth/debug:
  *   get:
  *     summary: Debug active sessions (development only)

@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "../utils/cn";
 
 const Button = ({
   children,
@@ -7,67 +8,83 @@ const Button = ({
   size = "md",
   type = "button",
   disabled = false,
+  loading = false,
+  icon,
   onClick,
   ...props
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
       case "primary":
-        return "bg-primary-500 hover:bg-primary-600 text-white border-transparent focus:ring-primary-500";
+        return "bg-orange-500 hover:bg-orange-600 text-white border-transparent focus:ring-orange-500 shadow-sm";
       case "secondary":
-        return "bg-secondary-500 hover:bg-secondary-600 text-white border-transparent focus:ring-secondary-500";
+        return "bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 focus:ring-orange-500 shadow-sm";
+      case "ghost":
+        return "bg-transparent hover:bg-gray-100 text-gray-700 border-transparent focus:ring-gray-300";
+      case "destructive":
+        return "bg-red-500 hover:bg-red-600 text-white border-transparent focus:ring-red-500 shadow-sm";
       case "success":
-        return "bg-green-500 hover:bg-green-600 text-white border-transparent focus:ring-green-500";
-      case "danger":
-        return "bg-red-500 hover:bg-red-600 text-white border-transparent focus:ring-red-500";
-      case "warning":
-        return "bg-yellow-500 hover:bg-yellow-600 text-white border-transparent focus:ring-yellow-500";
-      case "info":
-        return "bg-blue-500 hover:bg-blue-600 text-white border-transparent focus:ring-blue-500";
-      case "light":
-        return "bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 focus:ring-gray-300";
-      case "dark":
-        return "bg-gray-800 hover:bg-gray-900 text-white border-transparent focus:ring-gray-600";
+        return "bg-green-500 hover:bg-green-600 text-white border-transparent focus:ring-green-500 shadow-sm";
       case "outline":
-        return "bg-white hover:bg-gray-50 text-primary-500 border-primary-300 hover:border-primary-400 focus:ring-primary-500";
+        return "bg-transparent hover:bg-orange-50 text-orange-600 border border-orange-300 hover:border-orange-400 focus:ring-orange-500";
       case "link":
-        return "bg-transparent hover:bg-gray-50 text-primary-500 border-transparent hover:underline focus:ring-transparent p-0";
+        return "bg-transparent hover:bg-transparent text-orange-600 border-transparent hover:underline focus:ring-transparent p-0 shadow-none";
       default:
-        return "bg-primary-500 hover:bg-primary-600 text-white border-transparent focus:ring-primary-500";
+        return "bg-orange-500 hover:bg-orange-600 text-white border-transparent focus:ring-orange-500 shadow-sm";
     }
   };
 
   const getSizeClasses = () => {
     switch (size) {
       case "xs":
-        return "px-2.5 py-1.5 text-xs";
+        return "px-2 py-1 text-xs h-7";
       case "sm":
-        return "px-3 py-2 text-sm";
+        return "px-3 py-1.5 text-sm h-8";
       case "md":
-        return "px-4 py-2 text-sm";
+        return "px-4 py-2 text-sm h-10";
       case "lg":
-        return "px-5 py-2.5 text-base";
+        return "px-6 py-2.5 text-base h-11";
       case "xl":
-        return "px-6 py-3 text-base";
+        return "px-8 py-3 text-lg h-12";
       default:
-        return "px-4 py-2 text-sm";
+        return "px-4 py-2 text-sm h-10";
     }
   };
 
-  const baseClasses =
-    "inline-flex justify-center items-center border rounded-md shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200";
+  const baseClasses = `
+    inline-flex items-center justify-center gap-2 
+    border rounded-lg font-medium 
+    focus:outline-none focus:ring-2 focus:ring-offset-2 
+    disabled:opacity-50 disabled:cursor-not-allowed 
+    transition-all duration-200 ease-in-out
+    relative overflow-hidden
+  `;
 
-  const classes = `${baseClasses} ${getVariantClasses()} ${getSizeClasses()} ${className}`;
+  const classes = cn(
+    baseClasses,
+    getVariantClasses(),
+    getSizeClasses(),
+    className
+  );
 
   return (
     <button
       type={type}
       className={classes}
-      disabled={disabled}
+      disabled={disabled || loading}
       onClick={onClick}
       {...props}
     >
-      {children}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-inherit">
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      
+      <span className={`flex items-center gap-2 ${loading ? 'opacity-0' : 'opacity-100'}`}>
+        {icon && <span className="w-4 h-4">{icon}</span>}
+        {children}
+      </span>
     </button>
   );
 };
