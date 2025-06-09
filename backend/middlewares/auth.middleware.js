@@ -1,0 +1,109 @@
+const jwt = require("jsonwebtoken");
+
+/**
+ * Middleware to authenticate JWT token
+ */
+const authenticateToken = (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Access token is required",
+      });
+    }
+
+    jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your-jwt-secret",
+      (err, user) => {
+        if (err) {
+          return res.status(403).json({
+            success: false,
+            message: "Invalid or expired token",
+          });
+        }
+
+        req.user = user;
+        next();
+      }
+    );
+  } catch (error) {
+    console.error("Authentication error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Authentication failed",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Middleware to check if user is admin
+ */
+const requireAdmin = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    // Check if user has admin role (you can customize this logic)
+    const adminEmails = process.env.ADMIN_EMAILS
+      ? process.env.ADMIN_EMAILS.split(",")
+      : [];
+
+    if (!adminEmails.includes(req.user.email)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Admin check error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Authorization failed",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Optional authentication middleware (doesn't fail if no token)
+ */
+const optionalAuth = (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (token) {
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-jwt-secret",
+        (err, user) => {
+          if (!err) {
+            req.user = user;
+          }
+        }
+      );
+    }
+
+    next();
+  } catch (error) {
+    // Don't fail, just continue without user context
+    next();
+  }
+};
+
+module.exports = {
+  authenticateToken,
+  requireAdmin,
+  optionalAuth,
+};
