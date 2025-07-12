@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaCopy, FaCheck, FaQrcode, FaLink, FaShareAlt } from "react-icons/fa";
 import Card from "../ui/Card";
-import Button from "../ui/Button";
+import { Button } from "../ui/Button";
 
 const Input = ({ label, name, type = "text", value, onChange, required = false }) => (
   <div className="mb-4 text-left">

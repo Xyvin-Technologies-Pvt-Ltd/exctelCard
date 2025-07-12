@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Card from "../ui/Card";
-import Button from "../ui/Button";
+import { Button } from "../ui/Button";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ActivityViewPopup from "../components/ActivityViewPopup"; 
 

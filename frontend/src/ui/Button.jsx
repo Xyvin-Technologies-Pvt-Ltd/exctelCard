@@ -1,75 +1,55 @@
 import React from "react";
+import { cn } from "../utils/cn";
 
-const Button = ({
-  children,
-  className = "",
-  variant = "primary",
-  size = "md",
-  type = "button",
-  disabled = false,
-  onClick,
-  ...props
-}) => {
-  const getVariantClasses = () => {
-    switch (variant) {
-      case "primary":
-        return "bg-primary-500 hover:bg-primary-600 text-white border-transparent focus:ring-primary-500";
-      case "secondary":
-        return "bg-secondary-500 hover:bg-secondary-600 text-white border-transparent focus:ring-secondary-500";
-      case "success":
-        return "bg-green-500 hover:bg-green-600 text-white border-transparent focus:ring-green-500";
-      case "danger":
-        return "bg-red-500 hover:bg-red-600 text-white border-transparent focus:ring-red-500";
-      case "warning":
-        return "bg-yellow-500 hover:bg-yellow-600 text-white border-transparent focus:ring-yellow-500";
-      case "info":
-        return "bg-blue-500 hover:bg-blue-600 text-white border-transparent focus:ring-blue-500";
-      case "light":
-        return "bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 focus:ring-gray-300";
-      case "dark":
-        return "bg-gray-800 hover:bg-gray-900 text-white border-transparent focus:ring-gray-600";
-      case "outline":
-        return "bg-white hover:bg-gray-50 text-primary-500 border-primary-300 hover:border-primary-400 focus:ring-primary-500";
-      case "link":
-        return "bg-transparent hover:bg-gray-50 text-primary-500 border-transparent hover:underline focus:ring-transparent p-0";
+const Button = React.forwardRef(
+  (
+    {
+      className,
+      variant = "default",
+      size = "default",
+      asChild = false,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const baseStyles =
+      "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+
+    const variants = {
       default:
-        return "bg-primary-500 hover:bg-primary-600 text-white border-transparent focus:ring-primary-500";
-    }
-  };
+        "bg-orange-500 text-white hover:bg-orange-600 focus-visible:ring-orange-500",
+      destructive:
+        "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500",
+      outline:
+        "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500",
+      secondary:
+        "bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500",
+      ghost: "text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500",
+      link: "text-orange-600 underline-offset-4 hover:underline focus-visible:ring-orange-500",
+    };
 
-  const getSizeClasses = () => {
-    switch (size) {
-      case "xs":
-        return "px-2.5 py-1.5 text-xs";
-      case "sm":
-        return "px-3 py-2 text-sm";
-      case "md":
-        return "px-4 py-2 text-sm";
-      case "lg":
-        return "px-5 py-2.5 text-base";
-      case "xl":
-        return "px-6 py-3 text-base";
-      default:
-        return "px-4 py-2 text-sm";
-    }
-  };
+    const sizes = {
+      default: "h-10 px-4 py-2",
+      sm: "h-8 px-3 text-xs",
+      lg: "h-12 px-8",
+      icon: "h-10 w-10",
+    };
 
-  const baseClasses =
-    "inline-flex justify-center items-center border rounded-md shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200";
+    const Component = asChild ? "span" : "button";
 
-  const classes = `${baseClasses} ${getVariantClasses()} ${getSizeClasses()} ${className}`;
+    return (
+      <Component
+        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </Component>
+    );
+  }
+);
 
-  return (
-    <button
-      type={type}
-      className={classes}
-      disabled={disabled}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
+Button.displayName = "Button";
 
-export default Button;
+export { Button };
