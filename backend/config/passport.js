@@ -70,7 +70,9 @@ passport.use(new MicrosoftStrategy({
     clientID: process.env.MICROSOFT_CLIENT_ID,
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
     callbackURL: "/api/auth/microsoft/callback",
-    scope: ['user.read']
+    scope: ['user.read'],
+    authorizationURL: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize`,
+    tokenURL: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID}/oauth2/v2.0/token`
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         // Check if user already exists
