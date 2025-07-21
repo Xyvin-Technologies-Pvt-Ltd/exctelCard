@@ -1,0 +1,98 @@
+# Azure: Deploy React App to Azure VM
+name: Deploy React App to Azure VM
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install Dependencies and Build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          #VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
+          #VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Rename dist to exctel-card
+        run: |
+          cd frontend
+          mv ./dist ./exctel-card/
+
+      - name: Verify SSH connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_KEY }}
+          timeout: 60s
+          script: |
+            echo "SSH connection successful"
+            whoami
+            pwd
+            ls -la
+
+      - name: Clean Temporary Directory on Azure VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_KEY }}
+          timeout: 60s
+          script: |
+            rm -rf ~/deploy-temp
+            mkdir -p ~/deploy-temp
+            chmod 775 ~/deploy-temp
+
+      - name: Deploy to Azure VM using rsync
+        uses: burnett01/rsync-deployments@5.2.1
+        with:
+          switches: -avzr --delete
+          path: ./frontend/exctel-card/
+          remote_path: ~/deploy-temp/
+          remote_host: ${{ secrets.AZURE_VM_HOST }}
+          remote_user: ${{ secrets.AZURE_VM_USER }}
+          remote_key: ${{ secrets.AZURE_VM_KEY }}
+
+      - name: Deploy on Azure VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_KEY }}
+          timeout: 60s
+          script: |
+            echo "Deploying to web root..."
+            sudo rm -rf /var/www/html/exctel-card
+            sudo mkdir -p /var/www/html/exctel-card
+            sudo cp -R ~/deploy-temp/* /var/www/html/exctel-card
+            sudo chown -R www-data:www-data /var/www/html/exctel-card
+            sudo chmod -R 755 /var/www/html/exctel-card
+            sudo rm -rf ~/deploy-temp
+
+            echo "Restarting Nginx..."
+            sudo rm -rf /var/cache/nginx/*
+            sudo systemctl restart nginx
+
+            echo "Deployment completed!"
