@@ -1,40 +1,17 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import ActivityViewPopup from "../components/ActivityViewPopup"; 
-
-// Sample user data with activity stats
-const sampleUsers = [
-  {
-    _id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    department: "Engineering",
-    jobTitle: "Software Engineer",
-    lastLogin: "2025-05-18T10:30:00Z",
-    isActive: true,
-    profileImage: null,
-    activity: { total: 23, websiteView: 2, cardScan: 5, cardDownloads: 10 },
-  },
-  {
-    _id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    department: "Marketing",
-    jobTitle: "Marketing Manager",
-    lastLogin: "2025-05-17T14:15:00Z",
-    isActive: false,
-    profileImage: null,
-    activity: { total: 15, websiteView: 3, cardScan: 4, cardDownloads: 8 },
-  },
-];
+import ActivityViewPopup from "../components/ActivityViewPopup";
+import { getUsers, getUserActivity, searchUsers } from "../api/users";
 
 const Admin = () => {
   // State for tab switching
   const [activeTab, setActiveTab] = useState("users");
   // State for SSO configuration
   const [isConfiguring, setIsConfiguring] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [ssoConfig, setSsoConfig] = useState({
     provider: "microsoft",
     clientId: "",
@@ -47,6 +24,23 @@ const Admin = () => {
   // State for popup visibility and selected user's activity data
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+
+  // Fetch users with TanStack Query
+  const {
+    data: usersData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["users", searchQuery],
+    queryFn: () => (searchQuery ? searchUsers(searchQuery) : getUsers()),
+  });
+
+  // Fetch user activity when popup is opened
+  const { data: activityData } = useQuery({
+    queryKey: ["userActivity", selectedActivity?.userId],
+    queryFn: () => getUserActivity(selectedActivity?.userId),
+    enabled: !!selectedActivity?.userId,
+  });
 
   // Static formatDate function
   const formatDate = (dateString) => {
@@ -63,19 +57,21 @@ const Admin = () => {
     }));
   };
 
-  // Save SSO configuration (mock function for now)
+  // Save SSO configuration
   const saveSsoConfiguration = () => {
     setIsConfiguring(false);
-    alert(
-      "SSO configuration saved! (This is a demo - no actual changes are being made)"
-    );
+    // TODO: Implement actual SSO configuration save
     console.log("SSO Configuration:", ssoConfig);
   };
 
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   // Handle opening the popup
-  const openPopup = (activity) => {
-    setSelectedActivity(activity);
-    setIsPopupOpen(true);
+  const openPopup = async (userId) => {
+    setSelectedActivity({ userId });
   };
 
   // Handle closing the popup
@@ -83,6 +79,24 @@ const Admin = () => {
     setIsPopupOpen(false);
     setSelectedActivity(null);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="text-center text-red-500 p-4">
+        Error loading users: {error.message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -129,7 +143,8 @@ const Admin = () => {
                 type="text"
                 placeholder="Search users..."
                 className="input pr-10"
-                value=""
+                value={searchQuery}
+                onChange={handleSearchChange}
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg
@@ -184,7 +199,7 @@ const Admin = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {sampleUsers.map((user) => (
+                {usersData?.users?.map((user) => (
                   <tr key={user._id}>
                     <td className="px-4 py-3 whitespace-nowrap text-left">
                       <div className="flex items-center">
@@ -197,7 +212,7 @@ const Admin = () => {
                             />
                           ) : (
                             <span className="text-primary-800 font-medium">
-                              {user.name.charAt(0).toUpperCase()}
+                              {user.name?.charAt(0).toUpperCase()}
                             </span>
                           )}
                         </div>
@@ -212,17 +227,17 @@ const Admin = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                      {user.department}
+                      {user.department || "N/A"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                      {user.jobTitle}
+                      {user.jobTitle || "N/A"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
                       {formatDate(user.lastLogin)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       <button
-                        onClick={() => openPopup(user.activity)}
+                        onClick={() => openPopup(user._id)}
                         className="text-gray-500 hover:text-gray-700"
                       >
                         <MdOutlineRemoveRedEye />
@@ -241,7 +256,9 @@ const Admin = () => {
         <div className="space-y-6">
           <Card>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-left">SSO Configuration</h2>
+              <h2 className="text-xl font-semibold text-left">
+                SSO Configuration
+              </h2>
               <div>
                 {!isConfiguring && (
                   <Button
@@ -427,7 +444,9 @@ const Admin = () => {
           </Card>
 
           <Card>
-            <h2 className="text-xl font-semibold mb-4 text-left">User Provisioning</h2>
+            <h2 className="text-xl font-semibold mb-4 text-left">
+              User Provisioning
+            </h2>
             <div className="mb-6">
               <p className="text-gray-600 mb-4 text-left">
                 Choose how new users are added to the system and what default
@@ -465,11 +484,18 @@ const Admin = () => {
         </div>
       )}
 
-      {/* Render the ActivityViewPopup */}
+      {/* Activity View Popup */}
       <ActivityViewPopup
-        isOpen={isPopupOpen}
+        isOpen={!!selectedActivity}
         onClose={closePopup}
-        activityData={selectedActivity || { total: 0, websiteView: 0, cardScan: 0, cardDownloads: 0 }}
+        activityData={
+          activityData || {
+            total: 0,
+            websiteView: 0,
+            cardScan: 0,
+            cardDownloads: 0,
+          }
+        }
       />
     </div>
   );

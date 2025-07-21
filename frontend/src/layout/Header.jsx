@@ -29,10 +29,9 @@ const Header = ({ toggleSidebar, navigationItems }) => {
           </button>
 
           <h1 className="text-lg font-semibold text-gray-schaft800">
-            {navigationItems.find((item) => item.path === location.pathname)?.name || "Dashboard"}
+            {navigationItems.find((item) => item.path === location.pathname)
+              ?.name || "Profile"}
           </h1>
-
-          
         </div>
       </div>
     </header>

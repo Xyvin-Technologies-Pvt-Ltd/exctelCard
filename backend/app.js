@@ -5,12 +5,21 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
+const connectDB = require("./config/database");
+const morgan = require("morgan");
 require("dotenv").config();
+
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 
 // Import routes
 const authRoutes = require("./modules/auth/auth.route");
+const adminRoutes = require("./modules/admin/admin.route");
+const activityRoutes = require("./modules/users/activity.route");
+const profileRoutes = require("./modules/profile/profile.route");
+const shareRoutes = require("./modules/share/share.route");
 
 // Middleware
 app.use(
@@ -100,8 +109,12 @@ app.use(
   })
 );
 
-// Routes
+app.use(morgan("tiny")); // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/activities", activityRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/share", shareRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

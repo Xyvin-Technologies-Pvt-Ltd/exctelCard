@@ -1,27 +1,60 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { useAuthStore } from "../store/authStore";
+import {
+  useSSOMutation,
+  useAdminLoginMutation,
+  useTokenVerificationMutation,
+} from "../hooks/useAuthMutations";
+import { resetVerificationState } from "../api/auth";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Input from "../ui/Input";
 import { TiVendorMicrosoft } from "react-icons/ti";
 
 export default function LoginModern() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { login } = useAuth();
 
-  // Admin login state
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  const [adminCredentials, setAdminCredentials] = useState({
-    email: "",
-    password: "",
+  // Zustand store
+  const {
+    isLoading,
+    error,
+    isAdminMode,
+    setError,
+    clearError,
+    toggleAdminMode,
+    setAdminMode,
+    reset,
+  } = useAuthStore();
+
+  // TanStack Query mutations
+  const ssoMutation = useSSOMutation();
+  const adminLoginMutation = useAdminLoginMutation();
+  const tokenVerificationMutation = useTokenVerificationMutation();
+
+  // Ref to prevent multiple token verification calls
+  const hasProcessedToken = useRef(false);
+
+  // React Hook Form for admin login
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    reset: resetForm,
+  } = useForm({
+    defaultValues: {
+      email: "admin@exctel.com",
+      password: "admin123",
+    },
+    mode: "onChange",
   });
 
   // Check for token in URL params (from callback)
   useEffect(() => {
+    // Reset verification state on component mount
+    resetVerificationState();
+
     const token = searchParams.get("token");
     const error = searchParams.get("error");
 
@@ -31,14 +64,14 @@ export default function LoginModern() {
       token: token ? "Present (" + token.substring(0, 20) + "...)" : "None",
       error: error || "None",
     });
-    console.log("🔍 All search params:", Object.fromEntries(searchParams));
 
-    if (token) {
+    if (token && !hasProcessedToken.current) {
       console.log(
         "✅ Token received from callback:",
         token.substring(0, 50) + "..."
       );
-      handleTokenReceived(token);
+      hasProcessedToken.current = true;
+      tokenVerificationMutation.mutate(token);
     } else if (error) {
       console.error("❌ Authentication error from callback:", error);
       setError(decodeURIComponent(error));
@@ -47,136 +80,30 @@ export default function LoginModern() {
     }
   }, [searchParams]);
 
-  const handleTokenReceived = async (token) => {
-    try {
-      console.log("🔐 Processing received token...");
-      console.log("🔍 Token length:", token.length);
-      console.log("🔍 Token starts with:", token.substring(0, 30) + "...");
-
-      // Clear any existing errors
-      setError(null);
-      setIsLoading(true);
-
-      // Verify the token with backend
-      console.log("📡 Sending verification request to backend...");
-      const response = await fetch("http://localhost:5000/api/auth/verify", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      console.log("📡 Backend response status:", response.status);
-      const data = await response.json();
-      console.log("🔍 Token verification response:", data);
-
-      if (data.success && data.user) {
-        console.log("✅ User authenticated successfully:", data.user);
-
-        // Use AuthContext login function
-        login(data.user, token);
-        console.log("💾 Token stored via AuthContext");
-        console.log("🚀 Redirecting to dashboard...");
-
-        // Clear the token from URL
-        window.history.replaceState({}, document.title, "/login");
-        navigate("/dashboard");
-      } else {
-        console.error("❌ Token verification failed:", data.message);
-        setError("Authentication failed: " + (data.message || "Unknown error"));
-      }
-    } catch (error) {
-      console.error("❌ Error processing token:", error);
-      setError("Failed to process authentication: " + error.message);
-    } finally {
-      setIsLoading(false);
-    }
+  // Handle SSO login
+  const handleSSOLogin = () => {
+    clearError();
+    ssoMutation.mutate();
   };
 
-  const handleSSOLogin = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      console.log("🔄 Initiating SSO login...");
-
-      // Call backend to get Azure AD auth URL
-      const response = await fetch("http://localhost:5000/api/auth/login");
-      const data = await response.json();
-
-      console.log("🔍 Backend response:", data);
-
-      if (data.success && data.authUrl) {
-        console.log("✅ Auth URL received:", data.authUrl);
-        console.log("🚀 Redirecting to Azure AD...");
-
-        // Redirect to Azure AD
-        window.location.href = data.authUrl;
-      } else {
-        console.error("❌ Failed to get auth URL:", data.message);
-        setError(data.message || "Failed to initiate login");
-      }
-    } catch (error) {
-      console.error("❌ SSO login error:", error);
-      setError("Network error. Please check if the backend is running.");
-    } finally {
-      setIsLoading(false);
-    }
+  // Handle admin login form submission
+  const onAdminSubmit = (data) => {
+    adminLoginMutation.mutate(data);
   };
 
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    try {
-      setIsLoading(true);
-      setError(null);
-      console.log("🔄 Initiating Admin login...");
-
-      // Call backend admin login endpoint
-      const response = await fetch(
-        "http://localhost:5000/api/auth/admin/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(adminCredentials),
-        }
-      );
-
-      const data = await response.json();
-      console.log("🔍 Admin login response:", data);
-
-      if (data.success && data.token && data.user) {
-        console.log("✅ Admin authenticated successfully:", data.user);
-
-        // Use AuthContext login function
-        login(data.user, data.token);
-        console.log("💾 Admin token stored via AuthContext");
-        console.log("🚀 Redirecting to admin dashboard...");
-
-        // Redirect to admin dashboard or regular dashboard
-        navigate(
-          data.user.role === "admin" ? "/admin/dashboard" : "/dashboard"
-        );
-      } else {
-        console.error("❌ Admin login failed:", data.message);
-        setError(data.message || "Invalid admin credentials");
-      }
-    } catch (error) {
-      console.error("❌ Admin login error:", error);
-      setError("Network error. Please check if the backend is running.");
-    } finally {
-      setIsLoading(false);
-    }
+  // Handle mode switching
+  const handleBackToUserLogin = () => {
+    setAdminMode(false);
+    resetForm();
+    clearError();
   };
 
-  const handleAdminInputChange = (e) => {
-    const { name, value } = e.target;
-    setAdminCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  // Loading state from any active mutation
+  const isAnyLoading =
+    isLoading ||
+    ssoMutation.isPending ||
+    adminLoginMutation.isPending ||
+    tokenVerificationMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex">
@@ -334,8 +261,8 @@ export default function LoginModern() {
                   <>
                     <Button
                       onClick={handleSSOLogin}
-                      disabled={isLoading}
-                      loading={isLoading}
+                      disabled={isAnyLoading}
+                      loading={ssoMutation.isPending}
                       className="w-full h-12 text-base"
                       icon={<TiVendorMicrosoft className="text-xl" />}
                     >
@@ -352,9 +279,10 @@ export default function LoginModern() {
                     </div>
 
                     <Button
-                      onClick={() => setIsAdminMode(true)}
+                      onClick={toggleAdminMode}
                       variant="secondary"
                       className="w-full"
+                      disabled={isAnyLoading}
                     >
                       <svg
                         className="w-4 h-4 mr-2"
@@ -374,15 +302,15 @@ export default function LoginModern() {
                   </>
                 ) : (
                   // Admin Login Form
-                  <form onSubmit={handleAdminLogin} className="space-y-4">
+                  <form
+                    onSubmit={handleSubmit(onAdminSubmit)}
+                    className="space-y-4"
+                  >
                     <Input
                       label="Admin Email"
-                      name="email"
                       type="email"
-                      value={adminCredentials.email}
-                      onChange={handleAdminInputChange}
                       placeholder="admin@exctel.com"
-                      required
+                      error={errors.email?.message}
                       startIcon={
                         <svg
                           className="w-4 h-4"
@@ -398,16 +326,20 @@ export default function LoginModern() {
                           />
                         </svg>
                       }
+                      {...register("email", {
+                        required: "Email is required",
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Invalid email address",
+                        },
+                      })}
                     />
 
                     <Input
                       label="Admin Password"
-                      name="password"
                       type="password"
-                      value={adminCredentials.password}
-                      onChange={handleAdminInputChange}
                       placeholder="Enter admin password"
-                      required
+                      error={errors.password?.message}
                       startIcon={
                         <svg
                           className="w-4 h-4"
@@ -423,16 +355,19 @@ export default function LoginModern() {
                           />
                         </svg>
                       }
+                      {...register("password", {
+                        required: "Password is required",
+                        minLength: {
+                          value: 6,
+                          message: "Password must be at least 6 characters",
+                        },
+                      })}
                     />
 
                     <Button
                       type="submit"
-                      disabled={
-                        isLoading ||
-                        !adminCredentials.email ||
-                        !adminCredentials.password
-                      }
-                      loading={isLoading}
+                      disabled={!isValid || isAnyLoading}
+                      loading={adminLoginMutation.isPending}
                       className="w-full h-12"
                     >
                       <svg
@@ -453,13 +388,10 @@ export default function LoginModern() {
 
                     <Button
                       type="button"
-                      onClick={() => {
-                        setIsAdminMode(false);
-                        setAdminCredentials({ email: "", password: "" });
-                        setError(null);
-                      }}
+                      onClick={handleBackToUserLogin}
                       variant="secondary"
                       className="w-full"
+                      disabled={isAnyLoading}
                     >
                       ← Back to User Login
                     </Button>

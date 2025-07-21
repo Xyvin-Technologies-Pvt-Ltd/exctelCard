@@ -1,154 +1,346 @@
-import React, { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { FaDownload, FaShareAlt, FaHistory } from 'react-icons/fa';
+import React, { useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import {
+  FaDownload,
+  FaShareAlt,
+  FaCopy,
+  FaCheck,
+  FaArrowLeft,
+  FaUser,
+  FaQrcode,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import Button from "../ui/Button";
+import LoadingSpinner from "../ui/LoadingSpinner";
+import EmptyState from "../ui/EmptyState";
+import Card from "../ui/Card";
+import { useAuthStore } from "../store/authStore";
+import { useProfileOperations } from "../hooks/useProfile";
+import { useProfileStore } from "../store/profileStore";
 
 export default function QRCode() {
-  const [activeTab, setActiveTab] = useState('manage');
-  const [qrHistory] = useState([
-    {
-      id: 1,
-      name: 'Business Card QR',
-      created: '2024-01-15',
-      scans: 156,
-    },
-    {
-      id: 2,
-      name: 'Portfolio QR',
-      created: '2024-01-10',
-      scans: 89,
-    },
-  ]);
+  const navigate = useNavigate();
+  const qrRef = useRef(null);
+
+  // Auth and profile data
+  const { user: authUser } = useAuthStore();
+  const { profile, isLoading, error, generateShareId, isGeneratingShareId } =
+    useProfileOperations();
+  const { copyStates, copyToClipboard, generateUrls } = useProfileStore();
+
+  // Use profile data or fallback to auth user data
+  const currentProfile = profile || {
+    name: authUser?.name,
+    email: authUser?.email,
+    department: authUser?.department,
+    jobTitle: authUser?.jobTitle,
+    shareId: "",
+  };
+
+  const { directShareableUrl, hasShareId } = generateUrls(currentProfile);
 
   const downloadQR = () => {
-    // Implementation for downloading QR code
-    console.log('Downloading QR code...');
+    try {
+      // Create canvas element to convert SVG to image
+      const svg = qrRef.current;
+      if (!svg) return;
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+
+      // Convert SVG to data URL
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], {
+        type: "image/svg+xml;charset=utf-8",
+      });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        canvas.width = 400;
+        canvas.height = 400;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.drawImage(img, 0, 0, 400, 400);
+
+        // Download the image
+        const link = document.createElement("a");
+        link.download = `${
+          currentProfile.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
+        }-qr-code.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
+    } catch (error) {
+      console.error("Error downloading QR code:", error);
+    }
   };
 
-  const shareQR = () => {
-    // Implementation for sharing QR code
-    console.log('Sharing QR code...');
+  const shareQR = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${currentProfile.name}'s Digital Business Card`,
+          text: "Check out my digital business card",
+          url: directShareableUrl,
+        });
+      } else {
+        // Fallback: copy to clipboard
+        copyToClipboard(directShareableUrl, "shareLink");
+      }
+    } catch (error) {
+      console.error("Error sharing QR code:", error);
+    }
   };
+
+  const handleGenerateShareId = async () => {
+    try {
+      await generateShareId();
+    } catch (error) {
+      console.error("Error generating share ID:", error);
+    }
+  };
+
+  const handleCopyLink = () => {
+    copyToClipboard(directShareableUrl, "shareLink");
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white rounded-2xl p-8 shadow-lg">
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-600 mt-4 font-medium">
+            Loading your profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <EmptyState
+          title="Failed to load profile"
+          description="There was an error loading your profile data."
+          action={
+            <div className="space-y-2">
+              <Button onClick={() => window.location.reload()}>Retry</Button>
+              <Button variant="outline" onClick={() => navigate("/profile")}>
+                Go to Profile
+              </Button>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between mb-8">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              QR Code Management
-            </h2>
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <button
+              onClick={() => navigate(-1)}
+              className="mr-4 p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FaArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">QR Code</h1>
+              <p className="text-gray-600 mt-1">
+                Share your digital business card with a QR code
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <FaQrcode className="w-8 h-8 text-orange-600" />
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('manage')}
-              className={`${activeTab === 'manage'
-                ? 'border-orange-500 text-orange-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Manage QR Codes
-            </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`${activeTab === 'history'
-                ? 'border-orange-500 text-orange-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              History
-            </button>
-          </nav>
-        </div>
+        {hasShareId ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* QR Code Display */}
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                  Your QR Code
+                </h2>
 
-        {activeTab === 'manage' ? (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* QR Code Display */}
-                <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg">
-                  <QRCodeSVG
-                    value="https://exctel.com/card/example"
-                    size={200}
-                    level="H"
-                    includeMargin={true}
-                  />
-                  <div className="mt-6 flex space-x-4">
-                    <button
-                      onClick={downloadQR}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                    >
-                      <FaDownload className="mr-2" />
-                      Download
-                    </button>
-                    <button
+                {/* QR Code */}
+                <div className="flex justify-center mb-6">
+                  <div className="p-6 bg-white rounded-2xl shadow-inner border-2 border-gray-100">
+                    <QRCodeSVG
+                      ref={qrRef}
+                      value={directShareableUrl}
+                      size={200}
+                      level="H"
+                      includeMargin={true}
+                      bgColor="#FFFFFF"
+                      fgColor="#000000"
+                    />
+                  </div>
+                </div>
+
+                {/* Profile Info */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-lg font-bold text-white">
+                        {currentProfile.name?.charAt(0) || "U"}
+                      </span>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-gray-900">
+                        {currentProfile.name}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {currentProfile.jobTitle}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Scan this QR code to view the digital business card
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  <Button
+                    onClick={downloadQR}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
+                  >
+                    <FaDownload className="mr-2" />
+                    Download QR Code
+                  </Button>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
                       onClick={shareQR}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                      className="py-3"
                     >
                       <FaShareAlt className="mr-2" />
                       Share
-                    </button>
-                  </div>
-                </div>
+                    </Button>
 
-                {/* QR Code Settings */}
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      QR Code Name
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                      placeholder="Enter QR code name"
-                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleCopyLink}
+                      className="py-3"
+                    >
+                      {copyStates.shareLink ? (
+                        <>
+                          <FaCheck className="mr-2" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <FaCopy className="mr-2" />
+                          Copy Link
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Linked URL
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                      placeholder="Enter URL"
-                    />
-                  </div>
-                  <button className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                    Generate New QR Code
-                  </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Profile Preview */}
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Preview
+              </h2>
+
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  This is how your digital business card appears when someone
+                  scans your QR code:
+                </p>
+
+                {/* Card Preview */}
+                <div className="transform scale-90 origin-top">
+                  <Card
+                    user={currentProfile}
+                    qrCodeData={directShareableUrl}
+                    isFlippable={false}
+                  />
+                </div>
+              </div>
+
+              {/* Share URL */}
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-medium text-gray-500 mb-2">
+                  Share URL
+                </p>
+                <p className="text-sm font-mono text-gray-800 break-all">
+                  {directShareableUrl}
+                </p>
+              </div>
+
+              {/* Instructions */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                  How to use your QR code:
+                </h3>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Print it on business cards or flyers</li>
+                  <li>• Display it at events or meetings</li>
+                  <li>• Share it digitally via email or social media</li>
+                  <li>• Add it to your email signature</li>
+                </ul>
               </div>
             </div>
           </div>
         ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <ul className="divide-y divide-gray-200">
-              {qrHistory.map((item) => (
-                <li key={item.id} className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <FaHistory className="text-gray-400 mr-4" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {item.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Created on {item.created}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">
-                        {item.scans} scans
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          // No Share ID - Generate First
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-2xl mx-auto">
+            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FaQrcode className="w-12 h-12 text-orange-600" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Generate Your QR Code
+            </h2>
+
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Create a shareable QR code for your digital business card. Anyone
+              can scan it to instantly access your contact information.
+            </p>
+
+            <Button
+              onClick={handleGenerateShareId}
+              variant="success"
+              className="px-8 py-3 text-lg"
+              loading={isGeneratingShareId}
+              disabled={isGeneratingShareId}
+            >
+              {isGeneratingShareId ? (
+                "Generating..."
+              ) : (
+                <>
+                  <FaQrcode className="mr-2" />
+                  Generate QR Code
+                </>
+              )}
+            </Button>
+
+            <div className="mt-8 p-4 bg-gray-50 rounded-xl">
+              <p className="text-sm text-gray-600">
+                <strong>Note:</strong> You need to generate a share link first
+                before creating a QR code. This ensures your digital business
+                card is accessible to others.
+              </p>
+            </div>
           </div>
         )}
       </div>

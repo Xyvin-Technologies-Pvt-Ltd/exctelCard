@@ -1,9 +1,14 @@
 const { ConfidentialClientApplication } = require("@azure/msal-node");
+const jwt = require("jsonwebtoken");
+
 const {
   azureConfig,
   redirectUri,
   postLogoutRedirectUri,
 } = require("../../config/azureConfig");
+const User = require("../users/user.model");
+const UserActivity = require("../users/userActivity.model");
+const bcrypt = require("bcrypt");
 
 // Initialize MSAL instance
 const msalInstance = new ConfidentialClientApplication(azureConfig);
@@ -159,9 +164,9 @@ const handleCallback = async (req, res) => {
     // Exchange code for tokens
     const response = await msalInstance.acquireTokenByCode(tokenRequest);
 
-    // Extract user information
-    const userInfo = {
-      id: response.account.homeAccountId,
+    // Extract user information from Azure AD response
+    const azureUserInfo = {
+      entraId: response.account.homeAccountId,
       email: response.account.username,
       name: response.account.name,
       tenantId: response.account.tenantId,
@@ -169,14 +174,69 @@ const handleCallback = async (req, res) => {
       idToken: response.idToken,
     };
 
-    // Generate JWT token for your application (optional)
+    console.log("👤 Azure AD user info:", {
+      entraId: azureUserInfo.entraId,
+      email: azureUserInfo.email,
+      name: azureUserInfo.name,
+      tenantId: azureUserInfo.tenantId,
+    });
+
+    // Find or create user in our database
+    let user = await User.findOne({ email: azureUserInfo.email });
+
+    if (!user) {
+      console.log("🆕 Creating new user in database...");
+
+      // Create new user from Azure AD data
+      user = new User({
+        entraId: azureUserInfo.entraId,
+        email: azureUserInfo.email,
+        name: azureUserInfo.name,
+        tenantId: azureUserInfo.tenantId,
+        role: "user",
+        loginType: "sso",
+        isActive: true,
+        isEmailVerified: true,
+        createdBy: "sso",
+        lastLoginAt: new Date(),
+        loginCount: 1,
+      });
+
+      await user.save();
+      console.log("✅ New user created:", user._id);
+    } else {
+      console.log("👤 Existing user found, updating login info...");
+
+      // Update existing user login info
+      await user.updateLastLogin();
+      console.log("✅ User login info updated");
+    }
+
+    // Track login activity
+    await UserActivity.trackActivity({
+      userId: user._id,
+      activityType: "login",
+      source: "sso",
+      visitorInfo: {
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+      },
+      metadata: {
+        provider: "microsoft",
+        tenantId: azureUserInfo.tenantId,
+      },
+    });
+
+    // Generate JWT token for our application
     const jwt = require("jsonwebtoken");
     const appToken = jwt.sign(
       {
-        userId: userInfo.id,
-        email: userInfo.email,
-        name: userInfo.name,
-        tenantId: userInfo.tenantId,
+        userId: user._id, // Use our database user ID
+        email: user.email,
+        name: user.name,
+        tenantId: user.tenantId,
+        role: user.role,
+        loginType: user.loginType,
       },
       process.env.JWT_SECRET || "your-jwt-secret",
       { expiresIn: "24h" }
@@ -184,7 +244,14 @@ const handleCallback = async (req, res) => {
 
     // Store user session (replace with database in production)
     req.session = req.session || {};
-    req.session.user = userInfo;
+    req.session.user = {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      tenantId: user.tenantId,
+      loginType: user.loginType,
+    };
     req.session.token = appToken;
 
     // Redirect to frontend login page with token for processing
@@ -349,48 +416,42 @@ const adminLogin = async (req, res) => {
       });
     }
 
-    // Get admin credentials from environment variables
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    // Find admin user in database
+    const adminUser = await User.findOne({
+      email: email,
+      role: "admin",
+      isActive: true,
+    });
 
-    console.log("🔍 Checking admin credentials...");
-    console.log("  Expected email:", adminEmail);
-    console.log("  Provided email:", email);
-
-    if (!adminEmail || !adminPassword) {
-      console.error("❌ Admin credentials not configured in environment");
-      return res.status(500).json({
-        success: false,
-        message: "Admin authentication not configured",
-      });
-    }
-
-    // Validate credentials
-    if (email !== adminEmail || password !== adminPassword) {
-      console.error("❌ Invalid admin credentials provided");
+    if (!adminUser) {
+      console.error("❌ Admin user not found");
       return res.status(401).json({
         success: false,
         message: "Invalid admin credentials",
       });
     }
 
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, adminUser.password);
+    if (!isValidPassword) {
+      console.error("❌ Invalid admin password");
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin credentials",
+      });
+    }
+
+    // Update last login
+    adminUser.lastLogin = new Date();
+    await adminUser.save();
+
     console.log("✅ Admin credentials validated successfully");
 
-    // Create admin user object
-    const adminUser = {
-      id: "admin-" + require("crypto").randomBytes(8).toString("hex"),
-      email: adminEmail,
-      name: "Super Administrator",
-      role: "admin",
-      tenantId: "admin",
-      loginType: "password",
-    };
-
     // Generate JWT token for admin
-    const jwt = require("jsonwebtoken");
     const adminToken = jwt.sign(
       {
-        userId: adminUser.id,
+        userId: adminUser._id,
         email: adminUser.email,
         name: adminUser.name,
         role: adminUser.role,
@@ -403,11 +464,19 @@ const adminLogin = async (req, res) => {
 
     console.log("✅ Admin JWT token generated");
     console.log("🚀 Admin login successful");
+  
 
     res.json({
       success: true,
       token: adminToken,
-      user: adminUser,
+      user: {
+        id: adminUser._id,
+        email: adminUser.email,
+        name: adminUser.name,
+        role: adminUser.role,
+        tenantId: adminUser.tenantId,
+        loginType: adminUser.loginType,
+      },
       message: "Admin login successful",
     });
   } catch (error) {

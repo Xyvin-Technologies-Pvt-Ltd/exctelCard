@@ -1,334 +1,484 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
 import {
   FaCopy,
   FaCheck,
   FaQrcode,
-  FaLink,
   FaShareAlt,
   FaLock,
+  FaInfoCircle,
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaBriefcase,
 } from "react-icons/fa";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
-import { useAuth } from "../contexts/AuthContext";
+import LoadingSpinner from "../ui/LoadingSpinner";
+import EmptyState from "../ui/EmptyState";
+import { useAuthStore } from "../store/authStore";
+import { useProfileStore } from "../store/profileStore";
+import { useProfileOperations } from "../hooks/useProfile";
 
 // Read-only field component for Entra ID data
-const ReadOnlyField = ({ label, value, helperText }) => (
-  <div className="space-y-1">
-    <label className="block text-sm font-medium text-gray-700">
+const ReadOnlyField = ({ label, value, helperText, icon: Icon }) => (
+  <div className="space-y-2">
+    <label className="flex items-center text-sm font-medium text-gray-700">
+      <Icon className="mr-2 text-gray-500" />
       {label}
       <FaLock
         className="inline ml-2 text-xs text-gray-400"
         title="This field is managed by your organization"
       />
     </label>
-    <div className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700">
+    <div className="w-full px-4 py-3 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700">
       {value || "Not provided"}
     </div>
-    {helperText && <p className="text-xs text-gray-500">{helperText}</p>}
+    {helperText && <p className="text-xs text-gray-500 mt-1">{helperText}</p>}
   </div>
 );
 
+// Data freshness indicator
+const DataFreshness = ({ dataUpdatedAt, isStale }) => {
+  if (!dataUpdatedAt) return null;
+
+  const lastUpdated = new Date(dataUpdatedAt);
+  const now = new Date();
+  const minutesAgo = Math.floor((now - lastUpdated) / (1000 * 60));
+
+  return (
+    <div className="flex items-center text-xs text-gray-500 mb-4 bg-gray-50 px-3 py-2 rounded-lg">
+      <FaInfoCircle className="mr-2 text-blue-500" />
+      <span>
+        Data last updated{" "}
+        {minutesAgo === 0 ? "just now" : `${minutesAgo} minutes ago`}
+        {isStale && " (refreshing in background)"}
+      </span>
+    </div>
+  );
+};
+
+// Profile preview card
+const ProfilePreview = ({ profile }) => (
+  <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+    <div className="text-center">
+      <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span className="text-2xl font-bold text-white">
+          {profile.name?.charAt(0) || "U"}
+        </span>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+        {profile.name}
+      </h3>
+      <p className="text-sm text-gray-600 mb-2">{profile.jobTitle}</p>
+      <p className="text-xs text-gray-500">{profile.department}</p>
+      <div className="mt-4 pt-4 border-t border-orange-200">
+        <p className="text-xs text-orange-700 font-medium">
+          This is how your profile appears to others
+        </p>
+      </div>
+    </div>
+  </Card>
+);
+
 const Profile = () => {
-  const { user: authUser } = useAuth();
+  // Auth store for user data
+  const { user: authUser } = useAuthStore();
 
-  // Use real Entra ID data or fallback to demo data
-  const entraidUser = authUser || {
-    name: "Jane Doe",
-    email: "jane.doe@exctel.com",
-    department: "Engineering",
-    jobTitle: "Senior Developer",
-    tenantId: "12345678-1234-1234-1234-123456789012",
-  };
+  // Profile store for UI state
+  const { copyStates, copyToClipboard, generateUrls } = useProfileStore();
 
-  // Static/demo data for fields not in Entra ID
-  const localUserData = {
-    phone: "+1 (555) 123-4567",
-    linkedIn: "https://linkedin.com/in/janedoe",
+  // TanStack Query hooks for data operations
+  const {
+    profile,
+    isLoading,
+    error,
+    syncProfile,
+    updateProfile,
+    generateShareId,
+    isSyncing,
+    isUpdating,
+    isGeneratingShareId,
+    refreshProfile,
+    isStale,
+    dataUpdatedAt,
+  } = useProfileOperations();
+
+  // Track if we've already synced to prevent multiple calls
+  const hasSynced = useRef(false);
+
+  // Check if user is SSO user (not admin/super admin)
+  const isSSO =
+    authUser?.role !== "admin" &&
+    authUser?.role !== "super_admin" &&
+    authUser?.loginType !== "admin";
+
+  // Use profile data or fallback to auth user data
+  const currentProfile = profile || {
+    name: authUser?.name,
+    email: authUser?.email,
+    department: authUser?.department,
+    jobTitle: authUser?.jobTitle,
+    phone: "",
+    linkedIn: "",
     profileImage: "",
-    shareId: "abc123",
+    shareId: "",
   };
 
-  // State for ONLY editable fields (not managed by Entra ID)
-  const [formData, setFormData] = useState({
-    phone: localUserData.phone,
-    linkedIn: localUserData.linkedIn,
-    profileImage: localUserData.profileImage,
+  // React Hook Form setup
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty },
+    reset,
+    getValues,
+  } = useForm({
+    defaultValues: {
+      phone: currentProfile.phone || "",
+      linkedIn: currentProfile.linkedIn || "",
+      profileImage: currentProfile.profileImage || "",
+    },
   });
 
-  // State for UI interactions
-  const [copied, setCopied] = useState(false);
-  const [directLinkCopied, setDirectLinkCopied] = useState(false);
-  const [hasShareId, setHasShareId] = useState(!!localUserData.shareId);
-  const [isGenerating, setIsGenerating] = useState(false);
+  // Update form when profile data changes
+  useEffect(() => {
+    if (profile) {
+      reset({
+        phone: profile.phone || "",
+        linkedIn: profile.linkedIn || "",
+        profileImage: profile.profileImage || "",
+      });
+    }
+  }, [profile, reset]);
 
-  // URLs for sharing (use email as the profile identifier)
-  const profileSlug = entraidUser.email
-    ? entraidUser.email.split("@")[0]
-    : "user";
-  const shareableUrl = `${window.location.origin}/profile/${profileSlug}`;
-  const directShareableUrl = `${window.location.origin}/share/${localUserData.shareId}`;
+  // Sync profile with SSO data on component mount (only for SSO users)
+  useEffect(() => {
+    if (authUser && !hasSynced.current && !profile && isSSO) {
+      console.log("Initial profile sync for SSO user");
+      syncProfile();
+      hasSynced.current = true;
+    } else if (authUser && !isSSO) {
+      console.log("Skipping sync for admin/super admin user");
+    }
+  }, [authUser, syncProfile, profile, isSSO]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  // Generate URLs using store helper
+  const { directShareableUrl, hasShareId } = generateUrls(currentProfile);
+
+  // Event handlers
+  const handleCopyShareLink = () => {
+    copyToClipboard(directShareableUrl, "shareLink");
   };
 
-  const copyToClipboard = () => {
-    // Simulate copying to clipboard
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const copyDirectLink = () => {
-    // Simulate copying to clipboard
-    setDirectLinkCopied(true);
-    setTimeout(() => setDirectLinkCopied(false), 2000);
-  };
-
-  const handleGenerateShareId = () => {
-    // Simulate generating share ID
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setHasShareId(true);
-    }, 1000);
-  };
-
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-
+  const handleGenerateShareId = async () => {
     try {
-      // Only submit editable fields - Entra ID fields are read-only
-      const dataToSubmit = {
-        // Include Entra ID data for context (but won't be updated)
-        userId: entraidUser.email,
-        // Only these fields can be updated
-        phone: formData.phone,
-        linkedIn: formData.linkedIn,
-        profileImage: formData.profileImage,
-      };
-
-      console.log("📝 Submitting editable profile data:", dataToSubmit);
-
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/profile/update', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(dataToSubmit)
-      // });
-
-      alert(
-        "Editable profile fields updated successfully!\n\nUpdated:\n- Phone: " +
-          formData.phone +
-          "\n- LinkedIn: " +
-          formData.linkedIn +
-          "\n- Profile Image: " +
-          (formData.profileImage || "Not set")
-      );
+      await generateShareId();
     } catch (error) {
-      console.error("❌ Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      console.error("Error generating share ID:", error);
+    }
+  };
+
+  const onSubmit = async (data) => {
+    try {
+      await updateProfile(data);
+      reset(getValues()); // Reset form with updated values
+    } catch (error) {
+      console.error("Error updating profile:", error);
     }
   };
 
   const handleReset = () => {
-    // Reset only editable fields (Entra ID fields cannot be reset)
-    setFormData({
-      phone: localUserData.phone,
-      linkedIn: localUserData.linkedIn,
-      profileImage: localUserData.profileImage,
+    reset({
+      phone: currentProfile.phone || "",
+      linkedIn: currentProfile.linkedIn || "",
+      profileImage: currentProfile.profileImage || "",
     });
   };
 
-  return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Edit Profile - {entraidUser.name}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Update your profile information. Some fields are managed by your
-          organization and cannot be edited.
-        </p>
-      </div>
+  const handleManualRefresh = () => {
+    refreshProfile();
+  };
 
-      <Card className="mb-6">
-        <div className="p-4 text-left">
-          <h2 className="text-xl font-semibold mb-4 flex items-center text-left">
-            <FaLink className="mr-2 text-indigo-600" /> Your Shareable Profile
-            Link
-          </h2>
-          <div className="flex items-center space-x-2">
-            <div className="flex-1 bg-gray-100 p-3 rounded text-sm truncate text-left">
-              {shareableUrl}
-            </div>
-            <Button onClick={copyToClipboard} className="flex items-center">
-              {copied ? (
-                <>
-                  <FaCheck className="mr-1" /> Copied!
-                </>
-              ) : (
-                <>
-                  <FaCopy className="mr-1" /> Copy
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="mt-4 text-sm text-gray-600 text-left">
-            Share this link to let others view your professional profile. They
-            will see your public information.
-          </div>
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-600 mt-4">Loading your profile...</p>
         </div>
-      </Card>
+      </div>
+    );
+  }
 
-      <Card className="mb-6">
-        <div className="p-4 text-left">
-          <h2 className="text-xl font-semibold mb-4 flex items-center text-left">
-            <FaShareAlt className="mr-2 text-green-600" /> Direct Shareable Link
-          </h2>
-
-          {hasShareId ? (
-            <>
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 bg-gray-100 p-3 rounded text-sm truncate text-left">
-                  {directShareableUrl}
-                </div>
-                <Button onClick={copyDirectLink} className="flex items-center">
-                  {directLinkCopied ? (
-                    <>
-                      <FaCheck className="mr-1" /> Copied!
-                    </>
-                  ) : (
-                    <>
-                      <FaCopy className="mr-1" /> Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-              <div className="mt-4 text-sm text-gray-600 text-left">
-                This direct link is easier to share and doesn't require scanning
-                a QR code. Anyone with this link can view your business card
-                information.
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-gray-600 mb-4 text-left">
-                Generate a direct shareable link that's easier to share than a
-                QR code.
+  // Error state
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <EmptyState
+          title="Failed to load profile"
+          description={`Error loading profile: ${error.message}`}
+          action={
+            <div className="space-y-2">
+              <Button onClick={handleManualRefresh}>Retry</Button>
+              <p className="text-xs text-gray-500">
+                If the error persists, try refreshing the page in a few minutes
               </p>
-              <Button
-                onClick={handleGenerateShareId}
-                variant="success"
-                className="flex items-center"
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  "Generating..."
-                ) : (
-                  <>
-                    <FaShareAlt className="mr-1" /> Generate Share Link
-                  </>
-                )}
-              </Button>
-            </>
-          )}
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
-          <div className="mt-4 text-left">
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Profile Settings
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage your professional profile and sharing preferences
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={isLoading}
+              className="flex items-center"
+            >
+              <FaInfoCircle className="mr-2" />
+              Refresh Data
+            </Button>
             <a
               href="/qrcode"
-              className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
+              className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
             >
-              <FaQrcode className="mr-1" /> View QR Code
+              <FaQrcode className="mr-2" />
+              QR Code
             </a>
           </div>
         </div>
-      </Card>
 
-      <Card>
-        <Card.Header>
-          <Card.Title>Profile Information</Card.Title>
-          <Card.Description>
-            Fields with a lock icon are managed by your organization and cannot
-            be edited.
-          </Card.Description>
-        </Card.Header>
+        <DataFreshness dataUpdatedAt={dataUpdatedAt} isStale={isStale} />
+      </div>
 
-        <Card.Content>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Entra ID Managed Fields (Read-only) */}
-            <ReadOnlyField
-              label="Full Name"
-              value={entraidUser.name}
-              helperText="Managed by your organization"
-            />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column - Profile Preview */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Profile Preview
+            </h2>
+            <ProfilePreview profile={currentProfile} />
 
-            <ReadOnlyField
-              label="Email Address"
-              value={entraidUser.email}
-              helperText="Your organization email"
-            />
-
-            <ReadOnlyField
-              label="Department"
-              value={entraidUser.department}
-              helperText="Set by your organization"
-            />
-
-            <ReadOnlyField
-              label="Job Title"
-              value={entraidUser.jobTitle}
-              helperText="Managed by HR"
-            />
-
-            {/* Editable Fields */}
-            <Input
-              label="Phone Number"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleInputChange}
-              helperText="Your contact phone number"
-              placeholder="+1 (555) 123-4567"
-            />
-
-            <div className="md:col-span-1">
-              <Input
-                label="LinkedIn Profile URL"
-                name="linkedIn"
-                value={formData.linkedIn}
-                onChange={handleInputChange}
-                placeholder="https://linkedin.com/in/yourprofile"
-                helperText="Optional: Your LinkedIn profile"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <Input
-                label="Profile Image URL"
-                name="profileImage"
-                value={formData.profileImage}
-                onChange={handleInputChange}
-                placeholder="https://example.com/profile.jpg"
-                helperText="Optional: URL to your profile picture"
-              />
-            </div>
+            {/* Share Section */}
+            <Card className="mt-6">
+              <Card.Header>
+                <Card.Title className="flex items-center">
+                  <FaShareAlt className="mr-2 text-green-600" />
+                  Share Your Profile
+                </Card.Title>
+              </Card.Header>
+              <Card.Content>
+                {hasShareId ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">
+                        Your shareable link
+                      </p>
+                      <p className="text-sm font-mono text-gray-800 break-all">
+                        {directShareableUrl}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleCopyShareLink}
+                      className="w-full flex items-center justify-center"
+                      variant={copyStates.shareLink ? "success" : "primary"}
+                    >
+                      {copyStates.shareLink ? (
+                        <>
+                          <FaCheck className="mr-2" /> Copied!
+                        </>
+                      ) : (
+                        <>
+                          <FaCopy className="mr-2" /> Copy Share Link
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-600">
+                      Anyone with this link can view your business card
+                      information.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Generate a shareable link to easily share your profile
+                      with others.
+                    </p>
+                    <Button
+                      onClick={handleGenerateShareId}
+                      variant="success"
+                      className="w-full flex items-center justify-center"
+                      loading={isGeneratingShareId}
+                      disabled={isGeneratingShareId}
+                    >
+                      {isGeneratingShareId ? (
+                        "Generating..."
+                      ) : (
+                        <>
+                          <FaShareAlt className="mr-2" /> Generate Share Link
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </Card.Content>
+            </Card>
           </div>
-        </Card.Content>
+        </div>
 
-        <Card.Footer>
-          <Button type="button" variant="secondary" onClick={handleReset}>
-            Reset Editable Fields
-          </Button>
-          <Button type="button" variant="primary" onClick={handleSubmit}>
-            Save Changes
-          </Button>
-        </Card.Footer>
-      </Card>
+        {/* Right Column - Profile Form */}
+        <div className="lg:col-span-2">
+          <Card>
+            <Card.Header>
+              <Card.Title>Profile Information</Card.Title>
+              <Card.Description>
+                Update your contact information. Organization fields are managed
+                by your admin.
+              </Card.Description>
+            </Card.Header>
+
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Card.Content className="space-y-6">
+                {/* Organization Information (Read-only) */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                    Organization Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ReadOnlyField
+                      label="Full Name"
+                      value={currentProfile.name}
+                      helperText="Managed by your organization"
+                      icon={FaUser}
+                    />
+
+                    <ReadOnlyField
+                      label="Email Address"
+                      value={currentProfile.email}
+                      helperText="Your organization email"
+                      icon={FaEnvelope}
+                    />
+
+                    <ReadOnlyField
+                      label="Job Title"
+                      value={currentProfile.jobTitle}
+                      helperText="Managed by HR"
+                      icon={FaBriefcase}
+                    />
+
+                    <ReadOnlyField
+                      label="Department"
+                      value={currentProfile.department}
+                      helperText="Set by your organization"
+                      icon={FaBriefcase}
+                    />
+                  </div>
+                </div>
+
+                {/* Contact Information (Editable) */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                    Contact Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input
+                      label="Phone Number"
+                      type="tel"
+                      placeholder="+1 (555) 123-4567"
+                      helperText="Your contact phone number"
+                      error={errors.phone?.message}
+                      {...register("phone", {
+                        pattern: {
+                          value: /^[\+]?[1-9][\d]{0,15}$/,
+                          message: "Please enter a valid phone number",
+                        },
+                      })}
+                    />
+
+                    <Input
+                      label="LinkedIn Profile URL"
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      helperText="Optional: Your LinkedIn profile"
+                      error={errors.linkedIn?.message}
+                      {...register("linkedIn", {
+                        pattern: {
+                          value:
+                            /^https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+\/?$/,
+                          message: "Please enter a valid LinkedIn URL",
+                        },
+                      })}
+                    />
+
+                    <div className="md:col-span-2">
+                      <Input
+                        label="Profile Image URL"
+                        placeholder="https://example.com/profile.jpg"
+                        helperText="Optional: URL to your profile picture"
+                        error={errors.profileImage?.message}
+                        {...register("profileImage", {
+                          pattern: {
+                            value: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i,
+                            message: "Please enter a valid image URL",
+                          },
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card.Content>
+
+              <Card.Footer>
+                <div className="flex justify-between items-center w-full">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleReset}
+                  >
+                    Reset Changes
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={isUpdating}
+                    disabled={isUpdating || !isDirty}
+                    className="px-8"
+                  >
+                    {isUpdating ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </Card.Footer>
+            </form>
+          </Card>
+        </div>
+      </div>
+
+      {/* Sync Status */}
+      {isSyncing && (
+        <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
+          <div className="flex items-center">
+            <LoadingSpinner size="sm" className="mr-2" />
+            Syncing with organization data...
+          </div>
+        </div>
+      )}
     </div>
   );
 };
