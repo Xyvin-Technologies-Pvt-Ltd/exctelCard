@@ -53,7 +53,7 @@ jobs:
             set -e
 
             echo "📦 Loading image..."
-            docker load -i ~/backend-image.tar
+            sudo docker load -i ~/backend-image.tar
 
             echo "🧹 Stopping old container..."
             sudo docker stop ${{ env.CONTAINER_NAME }} || true
