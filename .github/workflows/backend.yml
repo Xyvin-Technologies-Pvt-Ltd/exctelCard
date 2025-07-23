@@ -40,8 +40,9 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_KEY }}
           source: "backend-image.tar"
+          # ✅ Use a clear filename, not a path that might be a folder
           target: "/home/${{ secrets.AZURE_VM_USER }}/backend-image.tar"
-          port: 22 
+          port: 22
 
       - name: 🚀 Load image & deploy on server
         uses: appleboy/ssh-action@master
@@ -51,6 +52,12 @@ jobs:
           key: ${{ secrets.AZURE_VM_KEY }}
           script: |
             set -e
+
+            echo "📂 Checking for old folder conflict..."
+            if [ -d "~/backend-image.tar" ]; then
+              echo "⚠️ Found directory named backend-image.tar. Removing it..."
+              rm -rf ~/backend-image.tar
+            fi
 
             echo "📦 Loading image..."
             sudo docker load -i ~/backend-image.tar
