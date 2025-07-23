@@ -41,6 +41,7 @@ jobs:
           key: ${{ secrets.AZURE_VM_KEY }}
           source: "backend-image.tar"
           target: "/home/${{ secrets.AZURE_VM_USER }}/backend-image.tar"
+          port: 22 
 
       - name: 🚀 Load image & deploy on server
         uses: appleboy/ssh-action@master
