@@ -33,30 +33,27 @@ jobs:
           echo "📦 Saving Docker image to backend-image.tar..."
           docker save ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} -o backend-image.tar
 
-      - name: ⚡ Pre-clean old folder on server
+      - name: ⚡ Ensure remote tmp folder exists and clean old tar
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_KEY }}
           script: |
-            echo "🧹 Checking for old backend-image.tar folder..."
-            if [ -d "$HOME/backend-image.tar" ]; then
-              echo "⚠️ Found old folder. Removing..."
-              rm -rf "$HOME/backend-image.tar"
-              echo "✅ Old folder removed."
-            else
-              echo "✅ No folder conflict found."
+            mkdir -p "$HOME/tmp"
+            if [ -f "$HOME/tmp/backend-image.tar" ]; then
+              echo "🧹 Removing old backend-image.tar in tmp..."
+              rm -f "$HOME/tmp/backend-image.tar"
             fi
 
-      - name: 🚚 Copy image tar to server
+      - name: 🚚 Copy image tar to server tmp folder
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_KEY }}
           source: "backend-image.tar"
-          target: "/home/${{ secrets.AZURE_VM_USER }}/backend-image.tar"
+          target: "/home/${{ secrets.AZURE_VM_USER }}/tmp/"
           port: 22
 
       - name: 🚀 Load image & deploy on server
@@ -69,7 +66,7 @@ jobs:
             set -e
 
             echo "📦 Loading Docker image..."
-            sudo docker load -i "$HOME/backend-image.tar"
+            sudo docker load -i "$HOME/tmp/backend-image.tar"
 
             echo "🧹 Stopping old container (if running)..."
             sudo docker stop ${{ env.CONTAINER_NAME }} || true
@@ -89,8 +86,7 @@ jobs:
               --env-file ${{ env.ENV_FILE_PATH }} \
               ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-            echo "🔍 Verifying container..."
-            sudo docker ps | grep ${{ env.CONTAINER_NAME }}
-            sudo docker logs ${{ env.CONTAINER_NAME }} --tail 10
+            echo "🧹 Removing backend-image.tar from tmp..."
+            rm -f "$HOME/tmp/backend-image.tar"
 
             echo "✅ Deployment completed successfully!"
