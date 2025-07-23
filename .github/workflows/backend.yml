@@ -1,5 +1,10 @@
 name: Deploy Backend to Azure VM with ACR
 
+# ✅ REQUIRED for OIDC and Azure login
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     paths:
@@ -8,57 +13,57 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-
 jobs:
   build-and-push:
     name: Build & Push Docker Image to ACR
     runs-on: ubuntu-latest
 
     env:
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}   # e.g. myacr123.azurecr.io
+      ACR_NAME: exctelcard
+      ACR_LOGIN_SERVER: exctelcard.azurecr.io
       IMAGE_NAME: exctelCard-backend
       IMAGE_TAG: latest
 
     steps:
-      - name: 📥 Checkout repo
+      - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🔐 Azure Login (using Service Principal)
+      # ✅ Login to Azure using Service Principal creds JSON
+      - name: 🔐 Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          auth-type: SERVICE_PRINCIPAL   # ✅ FIXED: force SP auth
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # ✅ Login to ACR
       - name: 🔑 Docker login to ACR
         uses: azure/docker-login@v1
         with:
           login-server: ${{ env.ACR_LOGIN_SERVER }}
 
-      - name: 📦 Build & Push Docker Image
+      # ✅ Build and push Docker image
+      - name: 📦 Build & Push Docker Image to ACR
         run: |
+          echo "Building image..."
           docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ./backend
+
+          echo "Pushing image to ACR..."
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   deploy:
-    name: Deploy to Azure VM over SSH
+    name: Deploy to Azure VM via SSH
     runs-on: ubuntu-latest
     needs: build-and-push
 
     env:
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      ACR_LOGIN_SERVER: exctelcard.azurecr.io
       IMAGE_NAME: exctelCard-backend
       IMAGE_TAG: latest
       CONTAINER_NAME: exctelCard-backend
       PORT: 5001
-      ENV_FILE_PATH: /home/xyvin-dev/.env/.env.production
+      ENV_FILE_PATH: /home/xyvin-dev/extelcard/.env/.env.production
 
     steps:
-      - name: 🚀 SSH to Azure VM & Deploy
+      - name: 🚀 Deploy using SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AZURE_VM_HOST }}
@@ -67,14 +72,16 @@ jobs:
           script: |
             set -e
 
-            echo "🔑 Login to Azure ACR..."
+            echo "🔐 Logging into Azure from VM..."
             az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
-            az acr login --name exctelcard
 
-            echo "📦 Pulling Docker image..."
+            echo "🔑 Logging into ACR..."
+            az acr login --name ${{ env.ACR_LOGIN_SERVER%%.* }}
+
+            echo "📦 Pulling latest Docker image..."
             sudo docker pull ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-            echo "🧹 Stopping & removing old container..."
+            echo "🧹 Stopping and removing old container if exists..."
             sudo docker stop ${{ env.CONTAINER_NAME }} || true
             sudo docker rm ${{ env.CONTAINER_NAME }} || true
 
@@ -84,7 +91,7 @@ jobs:
               exit 1
             fi
 
-            echo "🚀 Running new container..."
+            echo "🚀 Starting new container..."
             sudo docker run -d \
               -p ${{ env.PORT }}:${{ env.PORT }} \
               --restart always \
@@ -92,8 +99,8 @@ jobs:
               --env-file ${{ env.ENV_FILE_PATH }} \
               ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-            echo "🔍 Checking container logs..."
+            echo "🔍 Verifying container..."
             sudo docker ps | grep ${{ env.CONTAINER_NAME }}
             sudo docker logs ${{ env.CONTAINER_NAME }} --tail 10
 
-            echo "✅ Deployment complete!"
+            echo "✅ Deployment finished successfully!"
