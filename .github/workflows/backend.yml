@@ -16,7 +16,7 @@ jobs:
       IMAGE_NAME: exctelcard-backend
       IMAGE_TAG: latest
       CONTAINER_NAME: exctelCard-backend
-      PORT: 5001
+      APP_PORT: 5001
       ENV_FILE_PATH: /home/xyvin-dev/extelcard/.env/.env.production
 
     steps:
@@ -67,7 +67,7 @@ jobs:
 
             echo "🚀 Running new container..."
             sudo docker run -d \
-              -p ${{ env.PORT }}:${{ env.PORT }} \
+              -p ${{ env.APP_PORT }}:${{ env.APP_PORT }} \
               --restart always \
               --name ${{ env.CONTAINER_NAME }} \
               --env-file ${{ env.ENV_FILE_PATH }} \
