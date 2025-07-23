@@ -25,12 +25,12 @@ jobs:
 
       - name: 🐳 Build Docker image
         run: |
-          echo "Building image..."
+          echo "🔨 Building Docker image..."
           docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ./backend
 
       - name: 📦 Save Docker image to tar file
         run: |
-          echo "Saving image to backend-image.tar..."
+          echo "📦 Saving Docker image to backend-image.tar..."
           docker save ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} -o backend-image.tar
 
       - name: 🚚 Copy image tar to server
@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_KEY }}
           source: "backend-image.tar"
-          # ✅ Use a clear filename, not a path that might be a folder
+          # ✅ Explicit file name to avoid accidental folders
           target: "/home/${{ secrets.AZURE_VM_USER }}/backend-image.tar"
           port: 22
 
@@ -53,26 +53,26 @@ jobs:
           script: |
             set -e
 
-            echo "📂 Checking for old folder conflict..."
-            if [ -d "~/backend-image.tar" ]; then
+            echo "📂 Checking for folder conflict..."
+            if [ -d "$HOME/backend-image.tar" ]; then
               echo "⚠️ Found directory named backend-image.tar. Removing it..."
-              rm -rf ~/backend-image.tar
+              rm -rf "$HOME/backend-image.tar"
             fi
 
-            echo "📦 Loading image..."
-            sudo docker load -i ~/backend-image.tar
+            echo "📦 Loading Docker image..."
+            sudo docker load -i "$HOME/backend-image.tar"
 
-            echo "🧹 Stopping old container..."
+            echo "🧹 Stopping old container if running..."
             sudo docker stop ${{ env.CONTAINER_NAME }} || true
             sudo docker rm ${{ env.CONTAINER_NAME }} || true
 
-            echo "✅ Checking .env file..."
+            echo "✅ Verifying .env file exists..."
             if [ ! -f "${{ env.ENV_FILE_PATH }}" ]; then
               echo "❌ .env.production not found at ${{ env.ENV_FILE_PATH }}"
               exit 1
             fi
 
-            echo "🚀 Running new container..."
+            echo "🚀 Starting new container..."
             sudo docker run -d \
               -p ${{ env.CONTAINER_APP_PORT }}:${{ env.CONTAINER_APP_PORT }} \
               --restart always \
@@ -80,8 +80,8 @@ jobs:
               --env-file ${{ env.ENV_FILE_PATH }} \
               ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-            echo "🔍 Verifying..."
+            echo "🔍 Verifying deployment..."
             sudo docker ps | grep ${{ env.CONTAINER_NAME }}
             sudo docker logs ${{ env.CONTAINER_NAME }} --tail 10
 
-            echo "✅ Deployment done!"
+            echo "✅ Deployment completed successfully!"
