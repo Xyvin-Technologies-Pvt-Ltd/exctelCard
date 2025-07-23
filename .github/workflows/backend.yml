@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: exctelCard-backend
+      IMAGE_NAME: exctelcard-backend
       IMAGE_TAG: latest
       CONTAINER_NAME: exctelCard-backend
       PORT: 5001
