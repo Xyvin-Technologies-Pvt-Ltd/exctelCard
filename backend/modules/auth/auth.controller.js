@@ -257,7 +257,7 @@ const handleCallback = async (req, res) => {
     // Redirect to frontend login page with token for processing
     res.redirect(
       `${
-        process.env.FRONTEND_URL|| "http://localhost:5173"
+        process.env.FRONTEND_URL || "https://exctelcard.xyvin.com"
       }/login?token=${appToken}`
     );
   } catch (error) {
