@@ -394,77 +394,18 @@ const Profile = () => {
                 </div>
 
                 {/* Contact Information (Editable) */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                    Contact Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
+
+                <ReadOnlyField
                       label="Phone Number"
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
+                      value={currentProfile.phone}
                       helperText="Your contact phone number"
-                      error={errors.phone?.message}
-                      {...register("phone", {
-                        pattern: {
-                          value: /^[\+]?[1-9][\d]{0,15}$/,
-                          message: "Please enter a valid phone number",
-                        },
-                      })}
+                      icon={FaPhone}
                     />
 
-                    <Input
-                      label="LinkedIn Profile URL"
-                      placeholder="https://linkedin.com/in/yourprofile"
-                      helperText="Optional: Your LinkedIn profile"
-                      error={errors.linkedIn?.message}
-                      {...register("linkedIn", {
-                        pattern: {
-                          value:
-                            /^https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+\/?$/,
-                          message: "Please enter a valid LinkedIn URL",
-                        },
-                      })}
-                    />
-
-                    <div className="md:col-span-2">
-                      <Input
-                        label="Profile Image URL"
-                        placeholder="https://example.com/profile.jpg"
-                        helperText="Optional: URL to your profile picture"
-                        error={errors.profileImage?.message}
-                        {...register("profileImage", {
-                          pattern: {
-                            value: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i,
-                            message: "Please enter a valid image URL",
-                          },
-                        })}
-                      />
-                    </div>
-                  </div>
-                </div>
+                
               </Card.Content>
 
-              <Card.Footer>
-                <div className="flex justify-between items-center w-full">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleReset}
-                  >
-                    Reset Changes
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    loading={isUpdating}
-                    disabled={isUpdating || !isDirty}
-                    className="px-8"
-                  >
-                    {isUpdating ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
-              </Card.Footer>
+             
             </form>
           </Card>
         </div>

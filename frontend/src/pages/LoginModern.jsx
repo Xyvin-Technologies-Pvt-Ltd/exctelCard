@@ -151,13 +151,10 @@ export default function LoginModern() {
 
           <div className="max-w-md space-y-6 text-gray-300">
             <h2 className="text-2xl font-semibold text-white">
-              Welcome to the Future of Networking
+            Internal Business Card System
             </h2>
             <p className="text-gray-400 leading-relaxed">
-              Create, share, and manage your professional digital business
-              cards. Connect with people instantly and track your networking
-              success.
-            </p>
+            Create and manage your official digital business cards. Share details seamlessly within the organization and maintain a consistent professional identity across teams.            </p>
 
             <div className="grid grid-cols-2 gap-4 mt-8">
               <div className="text-center">
@@ -201,6 +198,9 @@ export default function LoginModern() {
                 </p>
               </div>
             </div>
+            <p className="text-gray-400 leading-relaxed">
+            🔒 Authorized Employees Only — Confidential Internal Use
+            </p>
           </div>
         </div>
       </div>
