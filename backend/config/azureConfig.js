@@ -28,18 +28,7 @@ console.log(process.env.AZURE_CLIENT_ID);
 console.log(process.env.AZURE_CLIENT_SECRET);
 console.log(process.env.AZURE_TENANT_ID);
 console.log(process.env.AZURE_AUTHORITY);
-console.log(process.env.AZURE_REDIRECT_URI);
-console.log(process.env.AZURE_POST_LOGOUT_REDIRECT_URI);
-console.log(process.env.AZURE_CLIENT_ID);
-console.log(process.env.AZURE_CLIENT_SECRET);
-console.log(process.env.AZURE_TENANT_ID);
-console.log(process.env.AZURE_AUTHORITY);
-console.log(process.env.AZURE_REDIRECT_URI);
-console.log(process.env.AZURE_POST_LOGOUT_REDIRECT_URI);
-console.log(process.env.AZURE_CLIENT_ID);
-console.log(process.env.AZURE_CLIENT_SECRET);
-console.log(process.env.AZURE_TENANT_ID);
-console.log(process.env.AZURE_AUTHORITY);
+
 
 module.exports = {
   azureConfig,
