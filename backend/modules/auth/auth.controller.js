@@ -97,7 +97,7 @@ const handleCallback = async (req, res) => {
       console.error("❌ OAuth error:", error, error_description);
       return res.redirect(
         `${
-          process.env.FRONTEND_URL || "http://localhost:5173"
+          process.env.FRONTEND_URL|| "http://localhost:5173"
         }/login?error=${encodeURIComponent(error_description || error)}`
       );
     }
@@ -119,7 +119,7 @@ const handleCallback = async (req, res) => {
       console.error("❌ No state parameter received");
       return res.redirect(
         `${
-          process.env.FRONTEND_URL || "http://localhost:5173"
+          process.env.FRONTEND_URL|| "http://localhost:5173"
         }/login?error=missing_state`
       );
     }
@@ -137,7 +137,7 @@ const handleCallback = async (req, res) => {
       } else {
         return res.redirect(
           `${
-            process.env.FRONTEND_URL || "http://localhost:5173"
+            process.env.FRONTEND_URL|| "http://localhost:5173"
           }/login?error=invalid_state`
         );
       }
@@ -150,7 +150,7 @@ const handleCallback = async (req, res) => {
     if (!code) {
       return res.redirect(
         `${
-          process.env.FRONTEND_URL || "http://localhost:5173"
+          process.env.FRONTEND_URL|| "http://localhost:5173"
         }/login?error=no_authorization_code`
       );
     }
@@ -257,14 +257,14 @@ const handleCallback = async (req, res) => {
     // Redirect to frontend login page with token for processing
     res.redirect(
       `${
-        process.env.FRONTEND_URL || "http://localhost:5173"
+        process.env.FRONTEND_URL|| "http://localhost:5173"
       }/login?token=${appToken}`
     );
   } catch (error) {
     console.error("Error handling callback:", error);
     res.redirect(
       `${
-        process.env.FRONTEND_URL || "http://localhost:5173"
+        process.env.FRONTEND_URL|| "http://localhost:5173"
       }/login?error=authentication_failed`
     );
   }
