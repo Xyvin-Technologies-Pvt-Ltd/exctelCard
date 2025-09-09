@@ -1,4 +1,4 @@
-name: Deploy Backend Directly to VM
+name: Deploy Backend Directly to AZURE-VM
 
 on:
   push:
