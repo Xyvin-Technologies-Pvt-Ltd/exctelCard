@@ -1,5 +1,5 @@
 
-name: Deploy React App to Azure 
+name: Deploy React App to Azure server
 
 on:
   push:
