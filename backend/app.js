@@ -31,8 +31,8 @@ app.use(
 app.use(
   cors({
     origin:[
-      "https://exctelcard.xyvin.com",
-      "https://api-exctelcard.xyvin.com",
+      "https://bizcard.exctel.com",
+      "https://api-bizcard.exctel.com",
       "http://localhost:5173",
       "http://localhost:5000",
     ],
