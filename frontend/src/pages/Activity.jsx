@@ -4,55 +4,6 @@ import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { getActivities, getActivityStats } from "../api/activities";
 
-// Static activity data with website view activities
-const staticActivities = [
-  {
-    _id: "1",
-    type: "scan",
-    ipAddress: "192.168.1.1",
-    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0",
-    timestamp: "2025-05-19T10:00:00Z",
-  },
-  {
-    _id: "2",
-    type: "download",
-    ipAddress: "172.16.0.1",
-    userAgent:
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
-    timestamp: "2025-05-18T15:30:00Z",
-  },
-  {
-    _id: "3",
-    type: "scan",
-    ipAddress: "10.0.0.1",
-    userAgent:
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) Mobile/15E148",
-    timestamp: "2025-05-17T08:45:00Z",
-  },
-  {
-    _id: "4",
-    type: "download",
-    ipAddress: "192.168.1.2",
-    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/115.0",
-    timestamp: "2025-04-20T12:00:00Z",
-  },
-  {
-    _id: "5",
-    type: "website view",
-    ipAddress: "192.168.1.3",
-    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/120.0.0.0",
-    timestamp: "2025-05-19T12:00:00Z",
-  },
-  {
-    _id: "6",
-    type: "website view",
-    ipAddress: "172.16.0.2",
-    userAgent:
-      "Mozilla/5.0 (Android 13; Mobile; rv:109.0) Gecko/109.0 Firefox/109.0",
-    timestamp: "2025-05-16T09:15:00Z",
-  },
-];
-
 const ActivityItem = ({ activity }) => {
   const getIcon = (type) => {
     switch (type) {

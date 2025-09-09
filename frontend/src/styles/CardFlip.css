@@ -63,15 +63,30 @@
   z-index: 3;
 }
 
-
 /* Media queries for responsive sizing */
+@media (max-width: 768px) {
+  .card-flip-container {
+    max-width: 280px;
+  }
+}
+
 @media (max-width: 640px) {
   .card-flip-container {
-    max-width: 220px;
+    max-width: 240px;
   }
 }
 
 @media (max-width: 400px) {
+  .card-flip-container {
+    max-width: 200px;
+  }
+
+  .business-card-side {
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 320px) {
   .card-flip-container {
     max-width: 180px;
   }

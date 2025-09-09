@@ -108,7 +108,7 @@ export default function LoginModern() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex">
       {/* Left Branding Section - Modern Design */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 relative  overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-blue-500/20"></div>
@@ -139,22 +139,21 @@ export default function LoginModern() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
           <div className="mb-8">
-            <h1 className="text-5xl lg:text-6xl font-bold text-white mb-4">
-              <span className="text-white">ex</span>
-              <span className="text-orange-500">ctel</span>
-              <span className="text-white">.</span>
-            </h1>
-            <p className="text-xl text-gray-300 font-light">
+           <img src="/logo.png" alt="ExctelCard" className="my-5 h-16" />
+            <p className="text-xl text-gray-700 font-light">
               Digital Business Cards
             </p>
           </div>
 
-          <div className="max-w-md space-y-6 text-gray-300">
-            <h2 className="text-2xl font-semibold text-white">
-            Internal Business Card System
+          <div className="max-w-md space-y-6 text-gray-900">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Internal Business Card System
             </h2>
-            <p className="text-gray-400 leading-relaxed">
-            Create and manage your official digital business cards. Share details seamlessly within the organization and maintain a consistent professional identity across teams.            </p>
+            <p className="text-gray-900 leading-relaxed">
+              Create and manage your official digital business cards. Share
+              details seamlessly within the organization and maintain a
+              consistent professional identity across teams.{" "}
+            </p>
 
             <div className="grid grid-cols-2 gap-4 mt-8">
               <div className="text-center">
@@ -173,7 +172,7 @@ export default function LoginModern() {
                     />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-gray-300">
+                <p className="text-sm font-medium text-gray-900">
                   Instant Sharing
                 </p>
               </div>
@@ -193,27 +192,25 @@ export default function LoginModern() {
                     />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-gray-300">
+                <p className="text-sm font-medium text-gray-900">
                   Real-time Analytics
                 </p>
               </div>
             </div>
-            <p className="text-gray-400 leading-relaxed">
-            🔒 Authorized Employees Only — Confidential Internal Use
+            <p className="text-gray-900 leading-relaxed">
+              🔒 Authorized Employees Only — Confidential Internal Use
             </p>
           </div>
         </div>
       </div>
 
       {/* Right Login Section - Modern Design */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+      <div className="w-full bg-orange-100 lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           {/* Logo for mobile */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold">
-              <span className="text-gray-900">ex</span>
-              <span className="text-orange-500">ctel</span>
-              <span className="text-gray-900">.</span>
+              <img src="/logo.png" alt="ExctelCard" className="my-5 h-16" />  
             </h1>
           </div>
 
@@ -232,7 +229,7 @@ export default function LoginModern() {
             <Card.Content>
               {/* Error Display */}
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 text-gray-900">
                   <svg
                     className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
                     fill="none"

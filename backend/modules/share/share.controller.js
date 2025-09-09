@@ -1,4 +1,5 @@
 const User = require("../users/user.model");
+const UserActivity = require("../users/userActivity.model");
 
 /**
  * Get shared profile by share ID (public route)
@@ -105,6 +106,15 @@ exports.trackProfileView = async (req, res) => {
           "analytics.websiteViews": 1,
         };
         console.log(`📊 Website view tracked for ${user.name} (${shareId})`);
+        await UserActivity.trackActivity({
+          userId: user._id,
+          activityType: "website_view",
+          source: "share",
+          visitorInfo: {
+            ipAddress: req.ip,
+            userAgent: req.get("User-Agent"),
+          },
+        });
         break;
 
       case "profile_view":
@@ -113,6 +123,15 @@ exports.trackProfileView = async (req, res) => {
           "analytics.profileViews": 1,
         };
         console.log(`👁️ Profile view tracked for ${user.name} (${shareId})`);
+        await UserActivity.trackActivity({
+          userId: user._id,
+          activityType: "profile_view",
+          source: "share",
+          visitorInfo: {
+            ipAddress: req.ip,
+            userAgent: req.get("User-Agent"),
+          },
+        });
         break;
 
       case "download":
@@ -124,11 +143,20 @@ exports.trackProfileView = async (req, res) => {
         if (downloadType === "vcard") {
           updateObj.$inc["analytics.vcardDownloads"] = 1;
           console.log(
-            `📥 vCard download tracked for ${user.name} (${shareId})`
+            `📥 vCard download tracked for  (${shareId})`
           );
         } else if (downloadType === "link_copy") {
           updateObj.$inc["analytics.linkCopies"] = 1;
           console.log(`🔗 Link copy tracked for ${user.name} (${shareId})`);
+          await UserActivity.trackActivity({
+            userId: user._id,
+              activityType: "link_click",
+            source: "share_link",
+            visitorInfo: {
+              ipAddress: req.ip,
+              userAgent: req.get("User-Agent"),
+            },
+          });
         }
         break;
 
@@ -149,6 +177,15 @@ exports.trackProfileView = async (req, res) => {
           console.log(
             `💼 LinkedIn click tracked for ${user.name} (${shareId})`
           );
+          await UserActivity.trackActivity({
+            userId: user._id,
+            activityType: "link_click",
+            source: "share_link",
+            visitorInfo: {
+              ipAddress: req.ip,
+              userAgent: req.get("User-Agent"),
+            },
+          });
         }
         break;
 
@@ -159,7 +196,17 @@ exports.trackProfileView = async (req, res) => {
           "analytics.profileViews": 1,
         };
         console.log(`👁️ Default view tracked for ${user.name} (${shareId})`);
-    }
+        //add log for default view
+        await UserActivity.trackActivity({
+          userId: user._id,
+          activityType: "profile_view",
+          source: "share_link",
+          visitorInfo: {
+            ipAddress: req.ip,
+            userAgent: req.get("User-Agent"),
+          },
+        });
+        }
 
     // Update user analytics
     await User.findOneAndUpdate({ shareId }, updateObj);

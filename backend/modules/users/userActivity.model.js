@@ -24,7 +24,7 @@ const userActivitySchema = new mongoose.Schema(
         "profile_share", // Profile was shared
         "login", // User logged in
         "profile_update", // User updated their profile,
-        
+        "website_view", // Website view
       ],
       required: true,
       index: true,
@@ -41,7 +41,9 @@ const userActivitySchema = new mongoose.Schema(
         "social_media",
         "search",
         "unknown",
-        "sso"
+        "sso",
+        "share",
+        "share_link"
 
       ],
       default: "unknown",

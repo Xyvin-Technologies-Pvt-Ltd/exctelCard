@@ -93,16 +93,23 @@ exports.getActivityStats = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    console.log("🔍 User analytics:", user.analytics);
+    let userStats = user.analytics;
 
-    // Get activity summary using the static method
-    const summary = await UserActivity.getUserActivitySummary(user._id);
-
+    let statsFinal = {
+      
+        scans: userStats?.cardScans || 0,
+      downloads: userStats?.vcardDownloads || 0,
+      websiteViews: userStats?.websiteViews || 0,
+      total: userStats?.profileViews+userStats?.vcardDownloads+userStats?.websiteViews || 0,
+    };
+ 
     res.json({
       stats: {
-        total: summary.total,
-        scans: summary.cardScan,
-        downloads: summary.cardDownloads,
-        websiteViews: summary.websiteView,
+        total: statsFinal.total || 0,
+          scans: statsFinal.scans || 0,
+        downloads: statsFinal.downloads || 0,
+        websiteViews: statsFinal.websiteViews || 0,
       },
     });
   } catch (error) {

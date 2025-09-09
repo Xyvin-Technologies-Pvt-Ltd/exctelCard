@@ -396,16 +396,12 @@ const Profile = () => {
                 {/* Contact Information (Editable) */}
 
                 <ReadOnlyField
-                      label="Phone Number"
-                      value={currentProfile.phone}
-                      helperText="Your contact phone number"
-                      icon={FaPhone}
-                    />
-
-                
+                  label="Phone Number"
+                  value={currentProfile.phone}
+                  helperText="Your contact phone number"
+                  icon={FaPhone}
+                />
               </Card.Content>
-
-             
             </form>
           </Card>
         </div>

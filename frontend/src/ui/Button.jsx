@@ -80,8 +80,12 @@ const Button = ({
           <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      
-      <span className={`flex items-center gap-2 ${loading ? 'opacity-0' : 'opacity-100'}`}>
+
+      <span
+        className={`flex items-center gap-2 ${
+          loading ? "opacity-0" : "opacity-100"
+        }`}
+      >
         {icon && <span className="w-4 h-4">{icon}</span>}
         {children}
       </span>
