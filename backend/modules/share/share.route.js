@@ -9,4 +9,6 @@ router.get("/:shareId", shareController.getSharedProfile);
 // Track profile view (optional - for analytics)
 router.post("/:shareId/view", shareController.trackProfileView);
 
+router.post("/:shareId/downloadPdf", shareController.downloadPdf);
+
 module.exports = router; 

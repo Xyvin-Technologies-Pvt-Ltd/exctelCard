@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
+    },  
+    businessPhones: {
+      type: String,
+      trim: true,
     },
     linkedIn: {
       type: String,
@@ -48,6 +52,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    address: {
+      type: String,
+      trim: true,
+    },
+  
 
     // System fields
     role: {

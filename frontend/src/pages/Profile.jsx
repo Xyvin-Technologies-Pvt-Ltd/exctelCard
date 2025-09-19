@@ -255,6 +255,18 @@ const Profile = () => {
               <FaInfoCircle className="mr-2" />
               Refresh Data
             </Button>
+            {isSSO && (
+              <Button
+                variant="primary"
+                onClick={syncProfile}
+                disabled={isSyncing || isLoading}
+                loading={isSyncing}
+                className="flex items-center"
+              >
+                <FaUser className="mr-2" />
+                {isSyncing ? "Syncing..." : "Sync with Azure AD"}
+              </Button>
+            )}
             <a
               href="/qrcode"
               className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
@@ -359,9 +371,29 @@ const Profile = () => {
               <Card.Content className="space-y-6">
                 {/* Organization Information (Read-only) */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                    Organization Information
-                  </h3>
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Organization Information
+                    </h3>
+                    {isSSO && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <FaInfoCircle className="mr-1" />
+                        <span>
+                          Auto-synced from Azure AD
+                          {dataUpdatedAt && (
+                            <span className="ml-1">
+                              • Last updated{" "}
+                              {Math.floor(
+                                (new Date() - new Date(dataUpdatedAt)) /
+                                  (1000 * 60)
+                              )}{" "}
+                              min ago
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ReadOnlyField
                       label="Full Name"

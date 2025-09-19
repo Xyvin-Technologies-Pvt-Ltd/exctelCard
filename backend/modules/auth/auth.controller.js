@@ -98,7 +98,7 @@ const handleCallback = async (req, res) => {
       console.error("❌ OAuth error:", error, error_description);
       return res.redirect(
         `${
-          FRONTEND_URL|| "http://localhost:5173"
+          FRONTEND_URL || "http://localhost:5173"
         }/login?error=${encodeURIComponent(error_description || error)}`
       );
     }
@@ -119,9 +119,7 @@ const handleCallback = async (req, res) => {
     if (!state) {
       console.error("❌ No state parameter received");
       return res.redirect(
-        `${
-          FRONTEND_URL|| "http://localhost:5173"
-        }/login?error=missing_state`
+        `${FRONTEND_URL || "http://localhost:5173"}/login?error=missing_state`
       );
     }
 
@@ -137,9 +135,7 @@ const handleCallback = async (req, res) => {
         console.log("⚠️ Development mode: proceeding despite invalid state");
       } else {
         return res.redirect(
-          `${
-            FRONTEND_URL|| "http://localhost:5173"
-          }/login?error=invalid_state`
+          `${FRONTEND_URL || "http://localhost:5173"}/login?error=invalid_state`
         );
       }
     } else {
@@ -151,7 +147,7 @@ const handleCallback = async (req, res) => {
     if (!code) {
       return res.redirect(
         `${
-          FRONTEND_URL|| "http://localhost:5173"
+          FRONTEND_URL || "http://localhost:5173"
         }/login?error=no_authorization_code`
       );
     }
@@ -238,9 +234,10 @@ const handleCallback = async (req, res) => {
         tenantId: user.tenantId,
         role: user.role,
         loginType: user.loginType,
+        accessToken: azureUserInfo.accessToken, // Include access token for Graph API calls
       },
       process.env.JWT_SECRET || "your-jwt-secret",
-      { expiresIn: "24h" }
+      { expiresIn: "1h" } // Reduced expiry since we're including the access token
     );
 
     // Store user session (replace with database in production)
@@ -252,20 +249,21 @@ const handleCallback = async (req, res) => {
       role: user.role,
       tenantId: user.tenantId,
       loginType: user.loginType,
+      accessToken: azureUserInfo.accessToken, // Include access token for Graph API calls
     };
     req.session.token = appToken;
 
     // Redirect to frontend login page with token for processing
     res.redirect(
       `${
-        FRONTEND_URL || "https://exctelcard.xyvin.com"
+        FRONTEND_URL || "https://bizcard.exctel.com"
       }/login?token=${appToken}`
     );
   } catch (error) {
     console.error("Error handling callback:", error);
     res.redirect(
       `${
-        FRONTEND_URL|| "http://localhost:5173"
+        FRONTEND_URL || "http://localhost:5173"
       }/login?error=authentication_failed`
     );
   }
@@ -282,6 +280,7 @@ const getProfile = async (req, res) => {
         message: "User not authenticated",
       });
     }
+    console.log("👤 User profile:", req.user);
 
     res.json({
       success: true,
@@ -432,7 +431,6 @@ const adminLogin = async (req, res) => {
       });
     }
 
-
     // Verify password
     const isValidPassword = await bcrypt.compare(password, adminUser.password);
     if (!isValidPassword) {
@@ -465,7 +463,6 @@ const adminLogin = async (req, res) => {
 
     console.log("✅ Admin JWT token generated");
     console.log("🚀 Admin login successful");
-  
 
     res.json({
       success: true,

@@ -135,3 +135,94 @@ export const downloadVCard = async (profile, shareId) => {
     return false;
   }
 };
+
+export const downloadWalletPass = async (shareId) => {
+  try {
+    const response = await fetch(`/api/share/${shareId}/downloadWalletPass`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        downloadType: "wallet",
+        viewType: "download",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Get the blob directly
+    const blob = await response.blob();
+
+    // Create and click download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "business-card.pkpass";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast.success("Added to Apple Wallet!");
+  } catch (error) {
+    console.error("Error downloading wallet pass:", error);
+    toast.error("Failed to add to Apple Wallet");
+    throw error;
+  }
+};
+
+export const downloadPdf = async (shareId) => {
+  try {
+    // Use fetch directly to get binary data
+    const response = await fetch(`/api/share/${shareId}/downloadPdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        downloadType: "pdf",
+        viewType: "download",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Get the filename from the Content-Disposition header if available
+    const contentDisposition = response.headers.get("Content-Disposition");
+    let filename = "business-card.pdf";
+    if (contentDisposition) {
+      const matches = /filename="(.+)"/.exec(contentDisposition);
+      if (matches) {
+        filename = matches[1];
+      }
+    }
+
+    // Get the blob directly
+    const blob = await response.blob();
+
+    // Create and click download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast.success("PDF downloaded successfully!");
+  } catch (error) {
+    console.error("Error downloading PDF:", error);
+    toast.error("Failed to download PDF");
+    throw error;
+  }
+};

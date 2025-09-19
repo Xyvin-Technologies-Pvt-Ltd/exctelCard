@@ -140,40 +140,93 @@ exports.generateShareId = async (req, res) => {
 /**
  * Sync profile with SSO data
  */
+const { Client } = require("@microsoft/microsoft-graph-client");
+require("isomorphic-fetch");
+
 exports.syncProfile = async (req, res) => {
   try {
-    const { name, email, department, jobTitle } = req.user;
+    const { accessToken } = req.user;
+
+    if (!accessToken) {
+      return res.status(401).json({
+        success: false,
+        message: "No access token available. Please re-authenticate.",
+      });
+    }
+
+    // Initialize Microsoft Graph Client
+    const client = Client.init({
+      authProvider: (done) => {
+        done(null, accessToken);
+      },
+    });
+
+    // Fetch user data from Microsoft Graph
+    const graphUser = await client
+      .api("/me")
+      .select(
+        "id,mail,displayName,department,jobTitle,mobilePhone,businessPhones,officeLocation"
+      )
+      .get();
 
     // Find existing user
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: graphUser.mail });
+    console.log("👤 User:", graphUser);
 
     if (user) {
       // Update SSO fields if they've changed
       const hasChanges =
-        user.name !== name ||
-        user.email !== email ||
-        user.department !== department ||
-        user.jobTitle !== jobTitle;
+        user.name !== graphUser.displayName ||
+        user.email !== graphUser.mail ||
+        user.department !== graphUser.department ||
+        user.jobTitle !== graphUser.jobTitle ||
+        user.phone !==
+          (graphUser.mobilePhone || graphUser.businessPhones?.[0]) ||
+        user.address !== graphUser.officeLocation;
+        user.businessPhones = graphUser.businessPhones;
 
       if (hasChanges) {
-        user.name = name;
-        user.email = email;
-        user.department = department;
-        user.jobTitle = jobTitle;
+        user.name = graphUser.displayName;
+        user.email = graphUser.mail;
+        user.department = graphUser.department;
+        user.jobTitle = graphUser.jobTitle;
+        user.phone =
+          graphUser.mobilePhone || graphUser.businessPhones?.[0] || user.phone;
+       user.businessPhones = graphUser.businessPhones;
+          user.address = graphUser.officeLocation || user.address;
         user.lastActiveAt = new Date();
         await user.save();
       }
     } else {
       // Create new user
       user = await User.create({
-        email,
-        name,
-        department,
-        jobTitle,
+        email: graphUser.mail,
+        name: graphUser.displayName,
+        department: graphUser.department,
+        jobTitle: graphUser.jobTitle,
+        phone: graphUser.mobilePhone || graphUser.businessPhones?.[0],
+        businessPhones: graphUser.businessPhones,
+        address: graphUser.officeLocation,
         loginType: "sso",
         createdBy: "sso",
         lastActiveAt: new Date(),
       });
+    }
+
+    // Try to fetch user photo if available
+    try {
+      const photo = await client.api("/me/photo/$value").get();
+      if (photo) {
+        const photoBuffer = await photo.arrayBuffer();
+        const base64Photo = Buffer.from(photoBuffer).toString("base64");
+        user.profileImage = `data:image/jpeg;base64,${base64Photo}`;
+        await user.save();
+      }
+    } catch (photoError) {
+      console.log(
+        "No profile photo available or error fetching photo:",
+        photoError.message
+      );
     }
 
     res.json({
@@ -185,19 +238,21 @@ exports.syncProfile = async (req, res) => {
         department: user.department,
         jobTitle: user.jobTitle,
         phone: user.phone,
+        businessPhones: user.businessPhones,
+        address: user.address,
         linkedIn: user.linkedIn,
         profileImage: user.profileImage,
         shareId: user.shareId,
         lastSyncedAt: user.updatedAt,
         lastUpdatedAt: user.updatedAt,
       },
-      message: "Profile synced successfully",
+      message: "Profile synced successfully with Azure AD",
     });
   } catch (error) {
-    console.error("Error syncing profile:", error);
+    console.error("Error syncing profile with Azure AD:", error);
     res.status(500).json({
       success: false,
-      message: "Error syncing profile",
+      message: "Error syncing profile with Azure AD",
       error: error.message,
     });
   }
