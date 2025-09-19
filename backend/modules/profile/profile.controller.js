@@ -24,7 +24,7 @@ exports.getProfile = async (req, res) => {
         email: user.email,
         department: user.department,
         jobTitle: user.jobTitle,
-        phone: user.phone,
+        phone: user.phone || user.businessPhones?.[0],
         linkedIn: user.linkedIn,
         profileImage: user.profileImage,
         shareId: user.shareId,

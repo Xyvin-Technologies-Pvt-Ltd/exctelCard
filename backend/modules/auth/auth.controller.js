@@ -84,6 +84,7 @@ const initiateLogin = async (req, res) => {
  * Handle OAuth callback from Azure AD
  */
 const handleCallback = async (req, res) => {
+  
   try {
     const { code, state, error, error_description } = req.query;
 

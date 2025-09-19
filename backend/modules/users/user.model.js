@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },  
     businessPhones: {
-      type: String,
+      type: [String],
       trim: true,
     },
     linkedIn: {
