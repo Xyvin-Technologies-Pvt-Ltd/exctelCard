@@ -46,8 +46,21 @@ export default {
         info: "#3b82f6",
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["Montserrat", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Aktiv Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Aktiv Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        body: ["Aktiv Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        aktiv: ["Aktiv Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      fontWeight: {
+        thin: "100",
+        extralight: "200",
+        light: "300",
+        normal: "400",
+        medium: "500",
+        semibold: "600",
+        bold: "700",
+        extrabold: "800",
+        black: "900",
       },
       boxShadow: {
         card: "0 4px 20px rgba(0, 0, 0, 0.08)",

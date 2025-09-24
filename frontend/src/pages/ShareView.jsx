@@ -29,6 +29,7 @@ import {
   FileText,
   Image,
   Link,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
@@ -135,6 +136,11 @@ const ShareView = () => {
     navigate(-1);
   };
 
+  const handleSaveContact = () => {
+    // Mock save to phone functionality
+    console.log("Saving contact to phone...");
+  };
+
   // Generate PDF using backend API
   const generateBusinessCardPDF = async (profile) => {
     try {
@@ -149,8 +155,8 @@ const ShareView = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-orange-100 flex items-center justify-center p-4">
-        <div className="text-center bg-white rounded-3xl p-8 shadow-2xl">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white rounded-xl p-8 shadow-lg max-w-md w-full">
           <LoadingSpinner size="lg" />
           <p className="text-gray-600 mt-4 font-medium">
             Loading professional profile...
@@ -163,8 +169,8 @@ const ShareView = () => {
   // Error state
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-orange-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md w-full text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl p-8 shadow-lg max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-red-600" />
           </div>
@@ -183,50 +189,34 @@ const ShareView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-orange-100">
-      {/* Professional Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Building className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">ExctelCard</h1>
-                <p className="text-sm text-gray-500">
-                  Professional Digital Profiles
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleCopyLink}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Copy Profile Link"
-              >
-                <Copy className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleBack}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Go Back"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Home Banner Video */}
+      <div className="relative w-full h-64 md:h-80 overflow-hidden">
+        <video
+          className="w-full h-full object-contain"
+          autoPlay
+          muted
+          loop
+          playsInline
+        >
+          <source src="/Exctel-Home-Banner.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        {/* Video Overlay */}
       </div>
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-orange-600/10"></div>
-        <div className="relative max-w-6xl mx-auto px-4 py-12">
-          <div className="text-center">
-            {/* Profile Avatar */}
-            <div className="relative inline-block mb-6">
-              <div className="w-32 h-32 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto shadow-2xl ring-4 ring-white">
+      <div className="px-4 py-2">
+        <div className="mx-auto max-w-md space-y-6">
+          {/* Main Business Card */}
+          <div className="overflow-hidden bg-white shadow-lg rounded-xl">
+            {/* Profile Section with Background */}
+            <div
+              className="relative px-6 py-8 text-center text-white bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1618591552964-837a5a315fb2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3Jwb3JhdGUlMjBidXNpbmVzcyUyMGJhY2tncm91bmQlMjBwcm9mZXNzaW9uYWx8ZW58MXx8fHwxNzU4NzAyODQxfDA&ixlib=rb-4.1.0&q=80&w=1080')`,
+              }}
+            >
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
                 {profile.profileImage ? (
                   <img
                     src={profile.profileImage}
@@ -234,310 +224,170 @@ const ShareView = () => {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-4xl font-bold text-white">
+                  <span className="text-2xl font-bold text-gray-900">
                     {profile.name?.charAt(0) || "U"}
                   </span>
                 )}
               </div>
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white">
-                <Smartphone className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold mb-1 drop-shadow-sm">
+                {profile.name}
+              </h2>
+              <p className="text-gray-100 mb-3 drop-shadow-sm">
+                {profile.jobTitle}
+              </p>
+              <div className="inline-flex items-center px-3 py-1 bg-white/80 text-gray-900 rounded-full text-sm font-medium border border-white/50 shadow-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                Available for Contact
               </div>
             </div>
 
-            {/* Profile Info */}
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {profile.name}
-            </h1>
-            <p className="text-xl text-orange-600 font-semibold mb-2">
-              {profile.jobTitle}
-            </p>
-            <p className="text-lg text-gray-600 mb-4">{profile.department}</p>
-
-            {/* Status Badge */}
-            <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              Available for Contact
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 pb-12">
-        {/* Download Actions - Prominent at top */}
-        <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Download className="w-5 h-5 text-orange-600 mr-2" />
-              Download & Save
-            </h3>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Primary Download Button */}
-              <div className="relative flex-1">
-                <Button
-                  onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 text-base font-semibold rounded-xl shadow-lg flex items-center justify-center"
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Download Business Card
-                  <ChevronDown
-                    className={`w-4 h-4 ml-2 transition-transform ${
-                      showDownloadMenu ? "rotate-180" : ""
-                    }`}
+            {/* Company Section */}
+            <div className="px-6 py-4">
+              <div className="flex items-center mb-4">
+                <div>
+                  <img
+                    src="/exctel-logo.png"
+                    alt="Exctel Card"
+                    className=" h-8"
                   />
-                </Button>
+                  <p className="text-sm text-gray-600">Driven by Excellence</p>
+                  <p
+                    className="text-sm text-gray-600 pt-2 cursor-pointer"
+                    onClick={() =>
+                      window.open("https://www.exctel.com", "_blank")
+                    }
+                  >
+                    www.exctel.com{" "}
+                  </p>
+                </div>
+              </div>
 
-                {/* Download Dropdown Menu */}
-                {showDownloadMenu && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-                    <div className="py-2">
-                      <button
-                        onClick={() => handleDownload("vcard")}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center text-gray-700"
-                      >
-                        <FileText className="w-5 h-5 mr-3 text-blue-600" />
-                        <div>
-                          <div className="font-medium">vCard (.vcf)</div>
-                          <div className="text-sm text-gray-500">
-                            Save to contacts
-                          </div>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => handleDownload("image")}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center text-gray-700"
-                      >
-                        <FileText className="w-5 h-5 mr-3 text-green-600" />
-                        <div>
-                          <div className="font-medium">PDF (.pdf)</div>
-                          <div className="text-sm text-gray-500">
-                            Download both sides as PDF
-                          </div>
-                        </div>
-                      </button>
-                      {/* <button
-                        onClick={() => handleDownload("wallet")}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center text-gray-700"
-                      >
-                        <Wallet className="w-5 h-5 mr-3 text-black" />
-                        <div>
-                          <div className="font-medium">Apple Wallet</div>
-                          <div className="text-sm text-gray-500">
-                            Add to Apple Wallet
-                          </div>
-                        </div>
-                      </button> */}
-                    </div>
+              <div className="border-t border-gray-200 my-4"></div>
+
+              {/* Contact Information */}
+              <div className="space-y-3">
+                {profile.email && (
+                  <div className="flex items-center text-sm">
+                    <Mail size={16} className="mr-3 text-gray-600" />
+                    <span className="text-gray-700">{profile.email}</span>
+                  </div>
+                )}
+                {profile.phone && (
+                  <div className="flex items-center text-sm">
+                    <Phone size={16} className="mr-3 text-gray-600" />
+                    <span className="text-gray-700">{profile.phone}</span>
+                  </div>
+                )}
+                {profile.address && (
+                  <div className="flex items-start text-sm">
+                    <MapPin
+                      size={16}
+                      className="mr-3 mt-0.5 text-gray-600 flex-shrink-0"
+                    />
+                    <span className="text-gray-700">{profile.address}</span>
+                  </div>
+                )}
+                {profile.linkedIn && (
+                  <div className="flex items-center text-sm">
+                    <User size={16} className="mr-3 text-gray-600" />
+                    <span className="text-gray-700">LinkedIn Profile</span>
                   </div>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* Copy Link Button */}
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            {/* Download Business Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <Download size={16} className="mr-2" />
+                Download Business Card
+              </h3>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleDownload("vcard")}
+                  className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
+                >
+                  vCard
+                </Button>
+                <Button
+                  onClick={() => handleDownload("image")}
+                  variant="outline"
+                  className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  PDF
+                </Button>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-3">
               <Button
-                variant="outline"
                 onClick={handleCopyLink}
-                className="px-6 py-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 hover:bg-orange-50 text-sm flex items-center justify-center"
+                variant="outline"
+                className="flex items-center justify-center border-gray-300 text-gray-700 hover:bg-gray-50"
               >
-                {copyStates.shareLink ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Link Copied!
-                  </>
-                ) : (
-                  <>
-                    <Link className="w-4 h-4 mr-2" />
-                    Copy Profile Link
-                  </>
-                )}
+                <Copy size={16} className="mr-2" />
+                Copy Link
+              </Button>
+              <Button
+                onClick={() => handleSaveContact()}
+                variant="outline"
+                className="flex items-center justify-center border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                <User size={16} className="mr-2" />
+                Save Contact
               </Button>
             </div>
           </div>
-        </div>
 
-        {/* Professional Information - All sections displayed directly */}
-        <div className="space-y-6">
-          {/* About Section */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <User className="w-5 h-5 text-orange-600 mr-2" />
-              About
+          {/* Digital Business Card Preview */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Digital Business Card Preview
             </h3>
-            <div className="pt-2">
-              <p className="text-gray-600 leading-relaxed">
-                Professional {profile.jobTitle?.toLowerCase()} at{" "}
-                {profile.department} with expertise in delivering exceptional
-                results. Passionate about innovation and committed to excellence
-                in every project.
-              </p>
-            </div>
-          </div>
-
-          {/* Professional Experience Section */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Briefcase className="w-5 h-5 text-orange-600 mr-2" />
-              Professional Experience
-            </h3>
-            <div className="pt-2 space-y-4">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Building className="w-6 h-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">
-                    {profile.jobTitle}
-                  </h4>
-                  <p className="text-orange-600 font-medium">
-                    {profile.department}
-                  </p>
-                  <p className="text-sm text-gray-500">Current Position</p>
-                </div>
+            <div className="flex justify-center">
+              <div className="w-full max-w-sm">
+                <Card
+                  user={{
+                    name: profile.name,
+                    title: profile.jobTitle,
+                    email: profile.email,
+                    phone: profile.phone,
+                    phone2: profile.phone2,
+                    address: profile.address,
+                  }}
+                  qrCodeData={window.location.href}
+                  isFlippable={true}
+                />
               </div>
             </div>
+            <p className="text-center text-xs text-gray-500 mt-2">
+              Tap to flip and see QR code
+            </p>
           </div>
 
-          {/* Contact Information */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <MessageCircle className="w-5 h-5 text-orange-600 mr-2" />
-              Contact Information
-            </h3>
-            <div className="pt-2 space-y-4">
-              {profile.email && (
-                <div className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                    <Mail className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
-                      Email
-                    </p>
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {profile.email}
-                    </p>
-                  </div>
-                  <a
-                    href={`mailto:${profile.email}`}
-                    onClick={() => handleContactClick("email", profile.email)}
-                    className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              )}
-
-              {profile.phone && (
-                <div className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                    <Phone className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
-                      Phone
-                    </p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {profile.phone}
-                    </p>
-                  </div>
-                  <a
-                    href={`tel:${profile.phone}`}
-                    onClick={() => handleContactClick("phone", profile.phone)}
-                    className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              )}
-
-              {profile.linkedIn && (
-                <div className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                    <User className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
-                      LinkedIn
-                    </p>
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      View Professional Profile
-                    </p>
-                  </div>
-                  <a
-                    href={profile.linkedIn}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() =>
-                      handleContactClick("linkedin", profile.linkedIn)
-                    }
-                    className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              )}
-
-              {profile.address && (
-                <div className="flex items-center p-4 bg-gray-50 rounded-xl">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
-                      Location
-                    </p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {profile.address}
-                    </p>
-                  </div>
-                </div>
-              )}
+          {/* Footer */}
+          <div className="text-center py-4">
+            <div className="flex items-center justify-center mb-2">
+              <img src="/exctel-logo.png" alt="Exctel Card" className=" h-8" />
             </div>
+            <p className="text-xs text-gray-500">
+              Powered by
+              <a
+                href="https://www.exctel.com"
+                target="_blank"
+                className="text-gray-500 underline"
+              >
+                {" "}
+                Exctel engineering
+              </a>
+            </p>
           </div>
-
-          {/* Digital Business Card - Moved to bottom */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <QrCode className="w-5 h-5 text-orange-600 mr-2" />
-              Digital Business Card
-            </h3>
-            <div className="business-card-image flex justify-center">
-              <Card
-                user={profile}
-                isFlippable={true}
-                qrCodeData={window.location.href}
-                className="shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-gray-200">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-              <Building className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-semibold text-gray-900">
-              ExctelCard
-            </span>
-          </div>
-          <p className="text-sm text-gray-500 mb-1">
-            Professional Digital Profiles
-          </p>
-          <p className="text-xs text-gray-400">
-            Create your own professional digital profile
-          </p>
         </div>
       </div>
-
-      {/* Click outside to close download menu */}
-      {showDownloadMenu && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowDownloadMenu(false)}
-        />
-      )}
     </div>
   );
 };

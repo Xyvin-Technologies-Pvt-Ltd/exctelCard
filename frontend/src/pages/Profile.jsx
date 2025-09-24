@@ -61,9 +61,9 @@ const DataFreshness = ({ dataUpdatedAt, isStale }) => {
 
 // Profile preview card
 const ProfilePreview = ({ profile }) => (
-  <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+  <Card className="bg-white border border-gray-200 shadow-sm">
     <div className="text-center">
-      <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
         <span className="text-2xl font-bold text-white">
           {profile.name?.charAt(0) || "U"}
         </span>
@@ -73,8 +73,8 @@ const ProfilePreview = ({ profile }) => (
       </h3>
       <p className="text-sm text-gray-600 mb-2">{profile.jobTitle}</p>
       <p className="text-xs text-gray-500">{profile.department}</p>
-      <div className="mt-4 pt-4 border-t border-orange-200">
-        <p className="text-xs text-orange-700 font-medium">
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <p className="text-xs text-gray-600 font-medium">
           This is how your profile appears to others
         </p>
       </div>
@@ -269,7 +269,7 @@ const Profile = () => {
             )}
             <a
               href="/qrcode"
-              className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               <FaQrcode className="mr-2" />
               QR Code
@@ -290,10 +290,10 @@ const Profile = () => {
             <ProfilePreview profile={currentProfile} />
 
             {/* Share Section */}
-            <Card className="mt-6">
+            <Card className="mt-6 border border-gray-200">
               <Card.Header>
-                <Card.Title className="flex items-center">
-                  <FaShareAlt className="mr-2 text-green-600" />
+                <Card.Title className="flex items-center text-gray-900">
+                  <FaShareAlt className="mr-2 text-gray-600" />
                   Share Your Profile
                 </Card.Title>
               </Card.Header>
@@ -311,7 +311,7 @@ const Profile = () => {
                     <Button
                       onClick={handleCopyShareLink}
                       className="w-full flex items-center justify-center"
-                      variant={copyStates.shareLink ? "success" : "primary"}
+                      variant={copyStates.shareLink ? "success" : "default"}
                     >
                       {copyStates.shareLink ? (
                         <>
@@ -336,8 +336,8 @@ const Profile = () => {
                     </p>
                     <Button
                       onClick={handleGenerateShareId}
-                      variant="success"
-                      className="w-full flex items-center justify-center"
+                      variant="default"
+                      className="w-full flex items-center justify-center bg-gray-900 text-white hover:bg-gray-800"
                       loading={isGeneratingShareId}
                       disabled={isGeneratingShareId}
                     >

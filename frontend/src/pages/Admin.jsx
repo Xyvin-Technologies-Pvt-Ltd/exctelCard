@@ -99,9 +99,9 @@ const Admin = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-white min-h-screen p-6">
       <div className="mb-5 text-left">
-        <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600">
           Manage users and configure system settings
         </p>
@@ -114,7 +114,7 @@ const Admin = () => {
             onClick={() => setActiveTab("users")}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === "users"
-                ? "border-primary-500 text-primary-600"
+                ? "border-gray-900 text-gray-900"
                 : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
             }`}
           >
@@ -124,7 +124,7 @@ const Admin = () => {
             onClick={() => setActiveTab("sso")}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === "sso"
-                ? "border-primary-500 text-primary-600"
+                ? "border-gray-900 text-gray-900"
                 : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
             }`}
           >
@@ -203,7 +203,7 @@ const Admin = () => {
                   <tr key={user._id}>
                     <td className="px-4 py-3 whitespace-nowrap text-left">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-200 flex items-center justify-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
                           {user.profileImage ? (
                             <img
                               src={user.profileImage}
@@ -211,7 +211,7 @@ const Admin = () => {
                               className="h-10 w-10 rounded-full"
                             />
                           ) : (
-                            <span className="text-primary-800 font-medium">
+                            <span className="text-gray-800 font-medium">
                               {user.name?.charAt(0).toUpperCase()}
                             </span>
                           )}
@@ -282,7 +282,7 @@ const Admin = () => {
                       name="provider"
                       value={ssoConfig.provider}
                       onChange={handleSsoConfigChange}
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                     >
                       <option value="microsoft">Microsoft Entra ID</option>
                       <option value="google">Google Workspace</option>
@@ -301,7 +301,7 @@ const Admin = () => {
                       value={ssoConfig.clientId}
                       onChange={handleSsoConfigChange}
                       placeholder="Enter client ID"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                     />
                   </div>
 
@@ -315,7 +315,7 @@ const Admin = () => {
                       value={ssoConfig.clientSecret}
                       onChange={handleSsoConfigChange}
                       placeholder="Enter client secret"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                     />
                   </div>
 
@@ -329,7 +329,7 @@ const Admin = () => {
                       value={ssoConfig.tenantId}
                       onChange={handleSsoConfigChange}
                       placeholder="Enter tenant ID"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                     />
                   </div>
 
@@ -343,7 +343,7 @@ const Admin = () => {
                       value={ssoConfig.redirectUri}
                       onChange={handleSsoConfigChange}
                       placeholder="Enter redirect URI"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                     />
                   </div>
 
@@ -355,7 +355,7 @@ const Admin = () => {
                       name="defaultRole"
                       value={ssoConfig.defaultRole}
                       onChange={handleSsoConfigChange}
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                     >
                       <option value="employee">Employee</option>
                       <option value="admin">Admin</option>
@@ -370,7 +370,7 @@ const Admin = () => {
                     type="checkbox"
                     checked={ssoConfig.autoProvisioning}
                     onChange={handleSsoConfigChange}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                   />
                   <label
                     htmlFor="autoProvisioning"
@@ -395,9 +395,9 @@ const Admin = () => {
             ) : (
               <div className="bg-gray-50 p-6 rounded-md">
                 <div className="flex items-center mb-4">
-                  <div className="rounded-full bg-primary-100 p-3 mr-3">
+                  <div className="rounded-full bg-gray-100 p-3 mr-3">
                     <svg
-                      className="h-6 w-6 text-primary-600"
+                      className="h-6 w-6 text-gray-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -459,7 +459,7 @@ const Admin = () => {
                       id="autoProvisioning"
                       name="provisioning"
                       type="radio"
-                      className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                      className="h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
                     />
                   </div>
                   <div className="ml-3 text-sm text-left">

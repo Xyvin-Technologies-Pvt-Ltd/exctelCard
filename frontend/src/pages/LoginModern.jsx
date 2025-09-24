@@ -106,12 +106,11 @@ export default function LoginModern() {
     tokenVerificationMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex">
+    <div className="min-h-screen bg-white flex">
       {/* Left Branding Section - Modern Design */}
-      <div className="hidden lg:flex lg:w-1/2 relative  overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-50">
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-blue-500/20"></div>
+        <div className="absolute inset-0 opacity-5">
           <svg
             className="absolute inset-0 w-full h-full"
             xmlns="http://www.w3.org/2000/svg"
@@ -139,17 +138,15 @@ export default function LoginModern() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
           <div className="mb-8">
-           <img src="/logo.png" alt="ExctelCard" className="my-5 h-16" />
-            <p className="text-xl text-gray-700 font-light">
-              Digital Business Cards
-            </p>
+            <img src="/logo.png" alt="Exctel" className="my-5 h-16" />
+            <p className="text-xl text-gray-600 font-light">Exctel Card</p>
           </div>
 
           <div className="max-w-md space-y-6 text-gray-900">
             <h2 className="text-2xl font-semibold text-gray-900">
               Internal Business Card System
             </h2>
-            <p className="text-gray-900 leading-relaxed">
+            <p className="text-gray-600 leading-relaxed">
               Create and manage your official digital business cards. Share
               details seamlessly within the organization and maintain a
               consistent professional identity across teams.{" "}
@@ -157,9 +154,9 @@ export default function LoginModern() {
 
             <div className="grid grid-cols-2 gap-4 mt-8">
               <div className="text-center">
-                <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <svg
-                    className="w-6 h-6 text-orange-400"
+                    className="w-6 h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -177,9 +174,9 @@ export default function LoginModern() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                   <svg
-                    className="w-6 h-6 text-blue-400"
+                    className="w-6 h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -197,7 +194,7 @@ export default function LoginModern() {
                 </p>
               </div>
             </div>
-            <p className="text-gray-900 leading-relaxed">
+            <p className="text-gray-500 leading-relaxed">
               🔒 Authorized Employees Only — Confidential Internal Use
             </p>
           </div>
@@ -205,21 +202,24 @@ export default function LoginModern() {
       </div>
 
       {/* Right Login Section - Modern Design */}
-      <div className="w-full bg-orange-100 lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+      <div className="w-full bg-gray-900 lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           {/* Logo for mobile */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold">
-              <img src="/logo.png" alt="ExctelCard" className="my-5 h-16" />  
+              <img src="/logo.png" alt="Exctel Card" className="my-5 h-16" />
             </h1>
           </div>
 
-          <Card padding="lg" className="shadow-xl border-0">
+          <Card
+            padding="lg"
+            className="shadow-lg border border-gray-200 bg-white"
+          >
             <Card.Header>
-              <Card.Title className="text-center text-2xl">
+              <Card.Title className="text-center text-2xl text-gray-900">
                 {isAdminMode ? "Admin Access" : "Welcome back"}
               </Card.Title>
-              <Card.Description className="text-center">
+              <Card.Description className="text-center text-gray-600">
                 {isAdminMode
                   ? "Super Admin login to manage all users and system"
                   : "Sign in to access your digital business card dashboard"}
@@ -277,8 +277,8 @@ export default function LoginModern() {
 
                     <Button
                       onClick={toggleAdminMode}
-                      variant="secondary"
-                      className="w-full"
+                      variant="outline"
+                      className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
                       disabled={isAnyLoading}
                     >
                       <svg
@@ -397,14 +397,14 @@ export default function LoginModern() {
               </div>
             </Card.Content>
 
-            <Card.Footer className="pt-6 border-t-0 justify-center">
+            <Card.Footer className="pt-6 border-t border-gray-200 justify-center">
               <p className="text-sm text-gray-600">
                 {isAdminMode ? (
                   <>
                     Need help with admin access?{" "}
                     <a
                       href="#"
-                      className="text-orange-600 hover:text-orange-700 font-medium"
+                      className="text-gray-900 hover:text-gray-700 font-medium"
                     >
                       Contact system administrator
                     </a>
@@ -414,7 +414,7 @@ export default function LoginModern() {
                     Don't have an account?{" "}
                     <a
                       href="#"
-                      className="text-orange-600 hover:text-orange-700 font-medium"
+                      className="text-gray-900 hover:text-gray-700 font-medium"
                     >
                       Contact your administrator
                     </a>
@@ -426,7 +426,7 @@ export default function LoginModern() {
 
           {/* Footer */}
           <div className="mt-8 text-center text-xs text-gray-500">
-            <p>© 2025 ExctelCard. All rights reserved.</p>
+            <p>© 2025 Exctel Card. All rights reserved.</p>
             <div className="mt-2 space-x-4">
               <a href="#" className="hover:text-gray-700">
                 Privacy Policy

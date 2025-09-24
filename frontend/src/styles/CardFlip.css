@@ -3,9 +3,9 @@
 .card-flip-container {
   perspective: 1000px;
   width: 100%;
-  max-width: 250px; /* Reduced business card width */
+  max-width: 350px; /* Increased business card width */
   margin: 0 auto;
-  aspect-ratio: 0.57; /* Standard business card ratio (3.5 x 2 inches) */
+  aspect-ratio: 0.62; /* Standard business card ratio (3.5 x 2 inches) */
   cursor: pointer;
 }
 
@@ -66,19 +66,19 @@
 /* Media queries for responsive sizing */
 @media (max-width: 768px) {
   .card-flip-container {
-    max-width: 280px;
+    max-width: 320px;
   }
 }
 
 @media (max-width: 640px) {
   .card-flip-container {
-    max-width: 240px;
+    max-width: 300px;
   }
 }
 
 @media (max-width: 400px) {
   .card-flip-container {
-    max-width: 200px;
+    max-width: 280px;
   }
 
   .business-card-side {
@@ -88,6 +88,6 @@
 
 @media (max-width: 320px) {
   .card-flip-container {
-    max-width: 180px;
+    max-width: 260px;
   }
 }

@@ -144,7 +144,7 @@ export default function QRCode() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -163,14 +163,14 @@ export default function QRCode() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <FaQrcode className="w-8 h-8 text-orange-600" />
+            <FaQrcode className="w-8 h-8 text-gray-600" />
           </div>
         </div>
 
         {hasShareId ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* QR Code Display */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
               <div className="text-center">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">
                   Your QR Code
@@ -178,7 +178,7 @@ export default function QRCode() {
 
                 {/* QR Code */}
                 <div className="flex justify-center mb-6">
-                  <div className="p-6 bg-white rounded-2xl shadow-inner border-2 border-gray-100">
+                  <div className="p-6 bg-white rounded-2xl shadow-inner border-2 border-gray-200">
                     <QRCodeSVG
                       ref={qrRef}
                       value={directShareableUrl}
@@ -194,7 +194,7 @@ export default function QRCode() {
                 {/* Profile Info */}
                 <div className="mb-6 p-4 bg-gray-50 rounded-xl">
                   <div className="flex items-center justify-center mb-2">
-                    <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                    <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mr-3">
                       <span className="text-lg font-bold text-white">
                         {currentProfile.name?.charAt(0) || "U"}
                       </span>
@@ -217,7 +217,7 @@ export default function QRCode() {
                 <div className="space-y-3">
                   <Button
                     onClick={downloadQR}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3"
                   >
                     <FaDownload className="mr-2" />
                     Download QR Code
@@ -303,9 +303,9 @@ export default function QRCode() {
           </div>
         ) : (
           // No Share ID - Generate First
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-2xl mx-auto">
-            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FaQrcode className="w-12 h-12 text-orange-600" />
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center max-w-2xl mx-auto">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FaQrcode className="w-12 h-12 text-gray-600" />
             </div>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -319,8 +319,8 @@ export default function QRCode() {
 
             <Button
               onClick={handleGenerateShareId}
-              variant="success"
-              className="px-8 py-3 text-lg"
+              variant="default"
+              className="px-8 py-3 text-lg bg-gray-900 text-white hover:bg-gray-800"
               loading={isGeneratingShareId}
               disabled={isGeneratingShareId}
             >
