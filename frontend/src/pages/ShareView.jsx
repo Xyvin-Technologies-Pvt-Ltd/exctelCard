@@ -213,7 +213,7 @@ const ShareView = () => {
             <div
               className="relative px-6 py-8 text-center text-white bg-cover bg-center bg-no-repeat"
               style={{
-                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1618591552964-837a5a315fb2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3Jwb3JhdGUlMjBidXNpbmVzcyUyMGJhY2tncm91bmQlMjBwcm9mZXNzaW9uYWx8ZW58MXx8fHwxNzU4NzAyODQxfDA&ixlib=rb-4.1.0&q=80&w=1080')`,
+                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wyMDczNnwwfDF8c2VhcmNofDk2fHxjeWJlcnNlY3VyaXR5fGVufDB8fHx8MTc1MTg0MDIyMXww&ixlib=rb-4.1.0&q=80&w=1080')`,
               }}
             >
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
