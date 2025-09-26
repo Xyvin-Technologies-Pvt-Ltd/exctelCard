@@ -20,6 +20,7 @@ const adminRoutes = require("./modules/admin/admin.route");
 const activityRoutes = require("./modules/users/activity.route");
 const profileRoutes = require("./modules/profile/profile.route");
 const shareRoutes = require("./modules/share/share.route");
+const qrcodeRoutes = require("./modules/qrcode/qrcode.route");
 
 // Middleware
 app.use(
@@ -30,7 +31,7 @@ app.use(
 
 app.use(
   cors({
-    origin:[
+    origin: [
       "https://bizcard.exctel.com",
       "https://api-bizcard.exctel.com",
       "http://localhost:5173",
@@ -120,6 +121,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/share", shareRoutes);
+app.use("/api/qr", qrcodeRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

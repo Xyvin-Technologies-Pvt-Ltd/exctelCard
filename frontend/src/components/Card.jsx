@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import QRCodeWithLogo from "./QRCodeWithLogo";
 import { Mail, Phone, MapPin, Globe } from "lucide-react";
 import "../styles/CardFlip.css";
 import { BsMicrosoftTeams } from "react-icons/bs";
@@ -50,12 +50,21 @@ const Card = ({ user, qrCodeData, isFlippable }) => {
             <div className="absolute top-[220px] left-4 space-y-1">
               <div className="flex items-center text-xs md:text-sm text-gray-700 font-aktiv-bold">
                 <Mail size={12} className="mr-2 text-gray-600 flex-shrink-0" />
-                <BsMicrosoftTeams size={12} className="mr-2 text-gray-600 flex-shrink-0" />
+                <BsMicrosoftTeams
+                  size={12}
+                  className="mr-2 text-gray-600 flex-shrink-0"
+                />
                 <span>{user?.email || "nowshad.hameed@exctel.com"}</span>
               </div>
               <div className="flex items-center text-xs md:text-sm text-gray-700 font-aktiv-bold">
-                <FaMobileAlt size={12} className="mr-2 text-gray-600 flex-shrink-0" />
-                <RiWhatsappFill size={12} className="mr-2 text-gray-600 flex-shrink-0" />
+                <FaMobileAlt
+                  size={12}
+                  className="mr-2 text-gray-600 flex-shrink-0"
+                />
+                <RiWhatsappFill
+                  size={12}
+                  className="mr-2 text-gray-600 flex-shrink-0"
+                />
                 <span>{user?.phone || "+65 9027 7225"}</span>
               </div>
               {user?.phone2 && (
@@ -79,9 +88,12 @@ const Card = ({ user, qrCodeData, isFlippable }) => {
                 </span>
               </div>
               <div className="flex items-center text-xs md:text-sm pt-4 text-gray-700 font-aktiv-bold">
-              <div className="w-5 h-2"></div>
+                <div className="w-5 h-2"></div>
 
-                <Globe size={12} className="mr-2 text-gray-600 flex-shrink-0 ma" />
+                <Globe
+                  size={12}
+                  className="mr-2 text-gray-600 flex-shrink-0 ma"
+                />
                 <span>www.exctel.com</span>
               </div>
             </div>
@@ -99,27 +111,37 @@ const Card = ({ user, qrCodeData, isFlippable }) => {
 
           {/* QR Code Overlay - positioned absolutely */}
           <div className="absolute bottom-5 md:bottom-4 left-1/2 transform -translate-x-1/2 z-10">
-            <div className="bg-white bg-opacity-90 p-1 md:p-2 rounded-lg">
+            <div className="bg-white bg-opacity-90 p-1 md:p-2  border-2 border-white">
               {/* Mobile QR Code */}
               <div className="block md:hidden">
-                <QRCodeSVG
+                <QRCodeWithLogo
                   value={qrCodeData || "https://www.exctel.com"}
-                  size={80}
+                  size={70}
+                  logoSize={30}
+                  logoPath="/logo.png"
+                  level="H"
                   includeMargin={true}
                   bgColor="#FFFFFF"
-                  fgColor="#000000"
-                  level="H"
+                  fgColor="#351b1b"
+                  frameStyle="none"
+                  frameColor="#F69322"
+                  frameWidth={2}
                 />
               </div>
               {/* Desktop QR Code */}
               <div className="hidden md:block">
-                <QRCodeSVG
+                <QRCodeWithLogo
                   value={qrCodeData || "https://www.exctel.com"}
                   size={100}
+                  logoSize={45}
+                  logoPath="/logo.png"
+                  level="H"
                   includeMargin={true}
                   bgColor="#FFFFFF"
-                  fgColor="#000000"
-                  level="H"
+                  fgColor="#443f3e"
+                  frameStyle="none"
+                  frameColor="#F69322"
+                  frameWidth={3}
                 />
               </div>
             </div>

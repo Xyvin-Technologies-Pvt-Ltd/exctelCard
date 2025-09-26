@@ -13,10 +13,19 @@ export const getQRHistory = async () => {
   }
 };
 
-// Generate new QR code
+// Generate new QR code with logo
 export const generateQRCode = async (qrData) => {
   try {
-    const response = await api.post("/api/qr/generate", qrData);
+    const response = await api.post("/api/qr/generate", {
+      shareId: qrData.shareId,
+      qrData: qrData.url,
+      size: qrData.size || 200,
+      logoSize: qrData.logoSize || 45,
+      logoPath: qrData.logoPath || "/logo.png",
+      level: qrData.level || "H",
+      bgColor: qrData.bgColor || "#FFFFFF",
+      fgColor: qrData.fgColor || "#000000",
+    });
     toast.success("QR code generated successfully");
     return response.data;
   } catch (error) {
@@ -60,6 +69,18 @@ export const getQRAnalytics = async (qrId) => {
   } catch (error) {
     console.error("Error fetching QR analytics:", error);
     toast.error("Failed to load QR code analytics");
+    throw error;
+  }
+};
+
+// Track QR code scan
+export const trackQRScan = async (shareId) => {
+  try {
+    const response = await api.post(`/api/qr/${shareId}/scan`);
+    return response.data;
+  } catch (error) {
+    console.error("Error tracking QR scan:", error);
+    // Don't show toast for scan tracking errors as it's not critical
     throw error;
   }
 };

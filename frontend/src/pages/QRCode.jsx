@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import QRCodeWithLogo from "../components/QRCodeWithLogo";
 import {
   FaDownload,
   FaShareAlt,
@@ -17,6 +17,7 @@ import Card from "../ui/Card";
 import { useAuthStore } from "../store/authStore";
 import { useProfileOperations } from "../hooks/useProfile";
 import { useProfileStore } from "../store/profileStore";
+import { generateQRCode, trackQRScan } from "../api/qrcode";
 
 export default function QRCode() {
   const navigate = useNavigate();
@@ -41,42 +42,66 @@ export default function QRCode() {
 
   const downloadQR = () => {
     try {
-      // Create canvas element to convert SVG to image
-      const svg = qrRef.current;
+      // Get the QR code container element
+      const qrContainer = qrRef.current?.closest(".relative") || qrRef.current;
+      if (!qrContainer) return;
+
+      // Use html2canvas to capture the QR code with logo
+      import("html2canvas")
+        .then((html2canvas) => {
+          html2canvas
+            .default(qrContainer, {
+              backgroundColor: "#ffffff",
+              scale: 2, // Higher resolution
+              useCORS: true,
+              allowTaint: true,
+            })
+            .then((canvas) => {
+              // Download the image
+              const link = document.createElement("a");
+              link.download = `${
+                currentProfile.name?.toLowerCase().replace(/\s+/g, "_") ||
+                "profile"
+              }-qr-code.png`;
+              link.href = canvas.toDataURL("image/png");
+              link.click();
+            })
+            .catch((error) => {
+              console.error("Error generating canvas:", error);
+              // Fallback to SVG download if html2canvas fails
+              downloadQRAsSVG();
+            });
+        })
+        .catch(() => {
+          // Fallback to SVG download if html2canvas is not available
+          downloadQRAsSVG();
+        });
+    } catch (error) {
+      console.error("Error downloading QR code:", error);
+    }
+  };
+
+  const downloadQRAsSVG = () => {
+    try {
+      const svg = qrRef.current?.querySelector("svg");
       if (!svg) return;
 
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const img = new Image();
-
-      // Convert SVG to data URL
       const svgData = new XMLSerializer().serializeToString(svg);
       const svgBlob = new Blob([svgData], {
         type: "image/svg+xml;charset=utf-8",
       });
       const url = URL.createObjectURL(svgBlob);
 
-      img.onload = () => {
-        canvas.width = 400;
-        canvas.height = 400;
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, 400, 400);
-        ctx.drawImage(img, 0, 0, 400, 400);
+      const link = document.createElement("a");
+      link.download = `${
+        currentProfile.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
+      }-qr-code.svg`;
+      link.href = url;
+      link.click();
 
-        // Download the image
-        const link = document.createElement("a");
-        link.download = `${
-          currentProfile.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
-        }-qr-code.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-
-        URL.revokeObjectURL(url);
-      };
-
-      img.src = url;
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading QR code:", error);
+      console.error("Error downloading SVG:", error);
     }
   };
 
@@ -100,14 +125,57 @@ export default function QRCode() {
   const handleGenerateShareId = async () => {
     try {
       await generateShareId();
+      // Generate QR code with logo after share ID is created
+      if (hasShareId) {
+        await generateQRCodeWithLogo();
+      }
     } catch (error) {
       console.error("Error generating share ID:", error);
+    }
+  };
+
+  const generateQRCodeWithLogo = async () => {
+    try {
+      if (hasShareId && directShareableUrl) {
+        await generateQRCode({
+          shareId: currentProfile.shareId,
+          url: directShareableUrl,
+          size: 200,
+          logoSize: 45,
+          logoPath: "/logo.png",
+          level: "H",
+          bgColor: "#FFFFFF",
+          fgColor: "#000000",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating QR code with logo:", error);
     }
   };
 
   const handleCopyLink = () => {
     copyToClipboard(directShareableUrl, "shareLink");
   };
+
+  // Track QR code scan when component mounts (if coming from QR scan)
+  React.useEffect(() => {
+    const trackScan = async () => {
+      if (currentProfile.shareId) {
+        try {
+          await trackQRScan(currentProfile.shareId);
+        } catch (error) {
+          // Silently fail for scan tracking
+          console.warn("Could not track QR scan:", error);
+        }
+      }
+    };
+
+    // Only track if this is a shared view (not the QR generation page)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("from") === "qr") {
+      trackScan();
+    }
+  }, [currentProfile.shareId]);
 
   // Loading state
   if (isLoading) {
@@ -179,14 +247,19 @@ export default function QRCode() {
                 {/* QR Code */}
                 <div className="flex justify-center mb-6">
                   <div className="p-6 bg-white rounded-2xl shadow-inner border-2 border-gray-200">
-                    <QRCodeSVG
+                    <QRCodeWithLogo
                       ref={qrRef}
                       value={directShareableUrl}
                       size={200}
+                      logoSize={45}
+                      logoPath="/logo.png"
                       level="H"
                       includeMargin={true}
                       bgColor="#FFFFFF"
                       fgColor="#000000"
+                      frameStyle="round"
+                      frameColor="#000000"
+                      frameWidth={4}
                     />
                   </div>
                 </div>
