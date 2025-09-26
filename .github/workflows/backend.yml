@@ -20,10 +20,6 @@ jobs:
       ENV_FILE_PATH: /home/xyvin-dev/extelcard/.env/.env.production
 
     steps:
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 make g++
       - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
