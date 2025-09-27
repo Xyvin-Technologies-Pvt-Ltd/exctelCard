@@ -411,10 +411,7 @@ const Admin = () => {
                                   <FaSpinner className="w-6 h-6 text-gray-400 animate-spin" />
                                 </div>
                               )}
-                              {/* QR Generation Status Overlay */}
-                              <div className="absolute top-1 right-1">
-                                {getQrStatusIcon(user._id)}
-                              </div>
+                          
                             </div>
                             <button
                               onClick={() => downloadUserQR(user)}
