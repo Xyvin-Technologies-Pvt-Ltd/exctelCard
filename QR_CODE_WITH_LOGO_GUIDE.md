@@ -230,3 +230,4 @@ backend/
 The system is now ready to generate professional QR codes with your company logo at the center, maintaining excellent readability while showcasing your brand identity.
 
 
+

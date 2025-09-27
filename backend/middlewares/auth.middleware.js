@@ -44,7 +44,6 @@ const authenticateToken = (req, res, next) => {
  */
 const requireAdmin = (req, res, next) => {
   try {
-    console.log('sad',req.user)
 
     if (!req.user) {
       return res.status(401).json({
@@ -53,12 +52,7 @@ const requireAdmin = (req, res, next) => {
       });
     }
 
-    console.log("🔍 Checking admin access for user:", {
-      userId: req.user.userId,
-      email: req.user.email,
-      role: req.user.role,
-      loginType: req.user.loginType,
-    });
+
 
     // Check if user has admin role
     if (req.user.role === "admin" || req.user.role === "super_admin") {

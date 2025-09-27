@@ -145,10 +145,11 @@ const LayoutModern = ({ children }) => {
           {/* Sidebar Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <Link to="/profile" className="flex items-center space-x-3">
-                <img src="/logo.png" alt="Exctel Card" className=" h-10" />
+                <img src="/logo.png" alt="Exctel Connect" className=" h-10" />
               <span className="text-xl font-bold text-gray-900">
                 <span className="text-orange-600">Exctel</span>
-                <span className="text-gray-900">Card</span>
+                <span className="text-gray-900"> </span>
+                <span className="text-gray-900">Connect</span>
               </span>
             </Link>
 

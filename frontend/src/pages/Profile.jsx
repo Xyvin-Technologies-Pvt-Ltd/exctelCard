@@ -20,6 +20,7 @@ import EmptyState from "../ui/EmptyState";
 import { useAuthStore } from "../store/authStore";
 import { useProfileStore } from "../store/profileStore";
 import { useProfileOperations } from "../hooks/useProfile";
+import { Link } from "react-router-dom";
 
 // Read-only field component for Entra ID data
 const ReadOnlyField = ({ label, value, helperText, icon: Icon }) => (
@@ -246,7 +247,7 @@ const Profile = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button
+            {/* <Button
               variant="outline"
               onClick={handleManualRefresh}
               disabled={isLoading}
@@ -254,7 +255,7 @@ const Profile = () => {
             >
               <FaInfoCircle className="mr-2" />
               Refresh Data
-            </Button>
+            </Button> */}
             {isSSO && (
               <Button
                 variant="primary"
@@ -267,13 +268,13 @@ const Profile = () => {
                 {isSyncing ? "Syncing..." : "Sync with Azure AD"}
               </Button>
             )}
-            <a
-              href="/qrcode"
+            <Link
+              to="/qrcode"
               className="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               <FaQrcode className="mr-2" />
               QR Code
-            </a>
+            </Link>
           </div>
         </div>
 

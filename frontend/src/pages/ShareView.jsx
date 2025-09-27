@@ -42,17 +42,14 @@ import {
   useTrackProfileView,
   useTrackDownload,
 } from "../hooks/useShare";
-import {
-  downloadPdf,
-  downloadVCard,
-  downloadWalletPass,
-  trackDownload,
-} from "../api/share";
+import { downloadVCard, downloadWalletPass, trackDownload } from "../api/share";
+import { generateBusinessCardPDF } from "../utils/pdfGenerator";
 
 const ShareView = () => {
   const navigate = useNavigate();
   const { copyStates, resetCopyState } = useUIStore();
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   // Remove accordion state since we're showing all sections directly
 
   // Fetch shared profile data
@@ -93,8 +90,8 @@ const ShareView = () => {
         await downloadVCard(profile, profile.shareId);
         break;
       case "image":
-        // Generate and download business card as PDF with both sides
-        await generateBusinessCardPDF(profile);
+        // Generate and download business card as PDF with both sides using frontend
+        await generateBusinessCardPDFFrontend(profile);
         break;
       case "wallet":
         await downloadWalletPass(profile.shareId);
@@ -141,12 +138,20 @@ const ShareView = () => {
     console.log("Saving contact to phone...");
   };
 
-  // Generate PDF using backend API
-  const generateBusinessCardPDF = async (profile) => {
+  // Generate PDF using frontend (Card component)
+  const generateBusinessCardPDFFrontend = async (profile) => {
+    setIsGeneratingPDF(true);
     try {
-      await downloadPdf(profile.shareId);
+      await generateBusinessCardPDF(profile, window.location.href);
+      // Show success message
+      const { toast } = await import("react-hot-toast");
+      toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
+      const { toast } = await import("react-hot-toast");
+      toast.error("Failed to generate PDF");
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -316,8 +321,9 @@ const ShareView = () => {
                   onClick={() => handleDownload("image")}
                   variant="outline"
                   className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={isGeneratingPDF}
                 >
-                  PDF
+                  {isGeneratingPDF ? "Generating..." : "PDF"}
                 </Button>
               </div>
             </div>
@@ -370,22 +376,12 @@ const ShareView = () => {
           </div>
 
           {/* Footer */}
-          <div className="text-center py-4">
+          {/* <div className="text-center py-4">
             <div className="flex items-center justify-center mb-2">
               <img src="/exctel-logo.png" alt="Exctel Card" className=" h-8" />
             </div>
-            <p className="text-xs text-gray-500">
-              Powered by
-              <a
-                href="https://www.exctel.com"
-                target="_blank"
-                className="text-gray-500 underline"
-              >
-                {" "}
-                Exctel engineering
-              </a>
-            </p>
-          </div>
+          
+          </div> */}
         </div>
       </div>
     </div>

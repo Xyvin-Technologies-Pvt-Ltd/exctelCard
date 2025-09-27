@@ -42,29 +42,43 @@ export default function QRCode() {
 
   const downloadQR = () => {
     try {
+      console.log("Starting QR code download...");
+
       // Get the QR code container element
-      const qrContainer = qrRef.current?.closest(".relative") || qrRef.current;
-      if (!qrContainer) return;
+      const qrContainer = qrRef.current;
+      console.log("QR container found:", qrContainer);
+
+      if (!qrContainer) {
+        console.error("QR container not found");
+        return;
+      }
 
       // Use html2canvas to capture the QR code with logo
       import("html2canvas")
         .then((html2canvas) => {
+          console.log("html2canvas loaded successfully");
           html2canvas
             .default(qrContainer, {
               backgroundColor: "#ffffff",
               scale: 2, // Higher resolution
               useCORS: true,
               allowTaint: true,
+              logging: true, // Enable logging for debugging
             })
             .then((canvas) => {
+              console.log("Canvas generated successfully");
               // Download the image
               const link = document.createElement("a");
-              link.download = `${
+              const fileName = `${
                 currentProfile.name?.toLowerCase().replace(/\s+/g, "_") ||
                 "profile"
               }-qr-code.png`;
+              link.download = fileName;
               link.href = canvas.toDataURL("image/png");
+              document.body.appendChild(link); // Required for some browsers
               link.click();
+              document.body.removeChild(link); // Clean up
+              console.log("Download initiated for:", fileName);
             })
             .catch((error) => {
               console.error("Error generating canvas:", error);
@@ -72,7 +86,8 @@ export default function QRCode() {
               downloadQRAsSVG();
             });
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error("Error loading html2canvas:", error);
           // Fallback to SVG download if html2canvas is not available
           downloadQRAsSVG();
         });
@@ -83,8 +98,14 @@ export default function QRCode() {
 
   const downloadQRAsSVG = () => {
     try {
+      console.log("Attempting SVG download fallback...");
       const svg = qrRef.current?.querySelector("svg");
-      if (!svg) return;
+      console.log("SVG element found:", svg);
+
+      if (!svg) {
+        console.error("SVG element not found");
+        return;
+      }
 
       const svgData = new XMLSerializer().serializeToString(svg);
       const svgBlob = new Blob([svgData], {
@@ -93,13 +114,16 @@ export default function QRCode() {
       const url = URL.createObjectURL(svgBlob);
 
       const link = document.createElement("a");
-      link.download = `${
+      const fileName = `${
         currentProfile.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
       }-qr-code.svg`;
+      link.download = fileName;
       link.href = url;
+      document.body.appendChild(link); // Required for some browsers
       link.click();
-
+      document.body.removeChild(link); // Clean up
       URL.revokeObjectURL(url);
+      console.log("SVG download initiated for:", fileName);
     } catch (error) {
       console.error("Error downloading SVG:", error);
     }
@@ -257,8 +281,8 @@ export default function QRCode() {
                       includeMargin={true}
                       bgColor="#FFFFFF"
                       fgColor="#000000"
-                      frameStyle="round"
-                      frameColor="#000000"
+                      frameStyle="none"
+                      frameColor="#F69322"
                       frameWidth={4}
                     />
                   </div>
@@ -333,22 +357,6 @@ export default function QRCode() {
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Preview
               </h2>
-
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  This is how your digital business card appears when someone
-                  scans your QR code:
-                </p>
-
-                {/* Card Preview */}
-                <div className="transform scale-90 origin-top">
-                  <Card
-                    user={currentProfile}
-                    qrCodeData={directShareableUrl}
-                    isFlippable={false}
-                  />
-                </div>
-              </div>
 
               {/* Share URL */}
               <div className="p-4 bg-gray-50 rounded-xl">

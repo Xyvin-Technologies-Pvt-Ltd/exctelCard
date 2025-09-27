@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import {
+  FaDownload,
+  FaSpinner,
+  FaCheck,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 import ActivityViewPopup from "../components/ActivityViewPopup";
+import QRCodeWithLogo from "../components/QRCodeWithLogo";
 import { getUsers, getUserActivity, searchUsers } from "../api/users";
+import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
 
 const Admin = () => {
   // State for tab switching
@@ -25,6 +33,16 @@ const Admin = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
 
+  // Refs for QR codes - create a map to store refs for each user
+  const qrRefs = useRef({});
+
+  // State for QR generation status
+  const [qrGenerationStatus, setQrGenerationStatus] = useState({});
+  const [isQrGenerating, setIsQrGenerating] = useState(false);
+
+  // State for visible QR codes (lazy loading)
+  const [visibleQRCodes, setVisibleQRCodes] = useState(new Set());
+
   // Fetch users with TanStack Query
   const {
     data: usersData,
@@ -41,6 +59,57 @@ const Admin = () => {
     queryFn: () => getUserActivity(selectedActivity?.userId),
     enabled: !!selectedActivity?.userId,
   });
+
+  // Monitor QR generation status
+  useEffect(() => {
+    const updateQrStatus = () => {
+      setIsQrGenerating(qrCodeBackgroundService.isGenerationInProgress());
+
+      if (usersData?.users) {
+        const statusMap = {};
+        usersData.users.forEach((user) => {
+          statusMap[user._id] = qrCodeBackgroundService.getStatus(user._id);
+        });
+        setQrGenerationStatus(statusMap);
+      }
+    };
+
+    // Update status immediately
+    updateQrStatus();
+
+    // Set up interval to check status periodically
+    const interval = setInterval(updateQrStatus, 2000);
+
+    return () => clearInterval(interval);
+  }, [usersData?.users]);
+
+  // Intersection Observer for lazy loading QR codes
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const userId = entry.target.dataset.userId;
+            if (userId) {
+              setVisibleQRCodes((prev) => new Set([...prev, userId]));
+            }
+          }
+        });
+      },
+      {
+        rootMargin: "100px", // Start loading 100px before the element comes into view
+        threshold: 0.1,
+      }
+    );
+
+    // Observe all QR code containers
+    const qrContainers = document.querySelectorAll("[data-qr-container]");
+    qrContainers.forEach((container) => observer.observe(container));
+
+    return () => {
+      qrContainers.forEach((container) => observer.unobserve(container));
+    };
+  }, [usersData?.users]);
 
   // Static formatDate function
   const formatDate = (dateString) => {
@@ -69,6 +138,25 @@ const Admin = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Get QR generation status icon
+  const getQrStatusIcon = (userId) => {
+    const status = qrGenerationStatus[userId];
+    if (!status) return null;
+
+    switch (status.status) {
+      case "generating":
+        return <FaSpinner className="w-3 h-3 text-blue-500 animate-spin" />;
+      case "completed":
+        return <FaCheck className="w-3 h-3 text-green-500" />;
+      case "error":
+        return <FaExclamationTriangle className="w-3 h-3 text-red-500" />;
+      case "skipped":
+        return <FaExclamationTriangle className="w-3 h-3 text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
+
   // Handle opening the popup
   const openPopup = async (userId) => {
     setSelectedActivity({ userId });
@@ -78,6 +166,54 @@ const Admin = () => {
   const closePopup = () => {
     setIsPopupOpen(false);
     setSelectedActivity(null);
+  };
+
+  // Download QR code for a specific user
+  const downloadUserQR = async (user) => {
+    try {
+      console.log("Starting QR code download for user:", user.name);
+
+      const qrRef = qrRefs.current[user._id];
+      if (!qrRef) {
+        console.error("QR ref not found for user:", user._id);
+        return;
+      }
+
+      const qrContainer = qrRef.current;
+      console.log("QR container found:", qrContainer);
+
+      if (!qrContainer) {
+        console.error("QR container not found");
+        return;
+      }
+
+      // Use html2canvas to capture the QR code
+      const html2canvas = (await import("html2canvas")).default;
+
+      const canvas = await html2canvas(qrContainer, {
+        backgroundColor: "#ffffff",
+        scale: 2, // Higher resolution
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+      });
+
+      console.log("Canvas generated successfully");
+
+      // Download the image
+      const link = document.createElement("a");
+      const fileName = `${
+        user.name?.toLowerCase().replace(/\s+/g, "_") || "user"
+      }-qr-code.png`;
+      link.download = fileName;
+      link.href = canvas.toDataURL("image/png");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      console.log("Download initiated for:", fileName);
+    } catch (error) {
+      console.error("Error downloading QR code:", error);
+    }
   };
 
   // Show loading state
@@ -120,16 +256,6 @@ const Admin = () => {
           >
             User Management
           </button>
-          <button
-            onClick={() => setActiveTab("sso")}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "sso"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-            }`}
-          >
-            SSO Configuration
-          </button>
         </nav>
       </div>
 
@@ -137,7 +263,16 @@ const Admin = () => {
       {activeTab === "users" && (
         <Card>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">User Management</h2>
+            <div>
+              <h2 className="text-xl font-semibold">User Management</h2>
+              {isQrGenerating && (
+                <div className="flex items-center mt-1 text-sm text-blue-600">
+                  <FaSpinner className="w-3 h-3 mr-2 animate-spin" />
+                  Generating QR codes in background... (
+                  {qrCodeBackgroundService.getOverallProgress()}%)
+                </div>
+              )}
+            </div>
             <div className="relative">
               <input
                 type="text"
@@ -176,7 +311,7 @@ const Admin = () => {
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Department
+                    Phone Number
                   </th>
                   <th
                     scope="col"
@@ -184,6 +319,13 @@ const Admin = () => {
                   >
                     Job Title
                   </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-40"
+                  >
+                    QR Code
+                  </th>
+
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
@@ -199,52 +341,114 @@ const Admin = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {usersData?.users?.map((user) => (
-                  <tr key={user._id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-left">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          {user.profileImage ? (
-                            <img
-                              src={user.profileImage}
-                              alt={user.name}
-                              className="h-10 w-10 rounded-full"
-                            />
-                          ) : (
-                            <span className="text-gray-800 font-medium">
-                              {user.name?.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="ml-3 flex flex-col justify-center">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.name}
+                {usersData?.users?.map((user) => {
+                  // Get or create ref for this user
+                  if (!qrRefs.current[user._id]) {
+                    qrRefs.current[user._id] = { current: null };
+                  }
+                  const qrRef = qrRefs.current[user._id];
+
+                  return (
+                    <tr key={user._id}>
+                      <td className="px-4 py-3 whitespace-nowrap text-left">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                            {user.profileImage ? (
+                              <img
+                                src={user.profileImage}
+                                alt={user.name}
+                                className="h-10 w-10 rounded-full"
+                              />
+                            ) : (
+                              <span className="text-gray-800 font-medium">
+                                {user.name?.charAt(0).toUpperCase()}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {user.email}
+                          <div className="ml-3 flex flex-col justify-center">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {user.email}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                      {user.department || "N/A"}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                      {user.jobTitle || "N/A"}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                      {formatDate(user.lastLogin)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => openPopup(user._id)}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <MdOutlineRemoveRedEye />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                        {user.phone || "N/A"}
+                      </td>
+
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                        {user.jobTitle || "N/A"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500 text-left">
+                        {user.shareId && user.shareId !== "" ? (
+                          <div className="flex items-center space-x-2">
+                            <div
+                              className="relative"
+                              data-qr-container
+                              data-user-id={user._id}
+                            >
+                              {visibleQRCodes.has(user._id) ? (
+                                <QRCodeWithLogo
+                                  ref={qrRef}
+                                  value={`${window.location.protocol}//${window.location.hostname}/share/${user.shareId}`}
+                                  size={120}
+                                  logoSize={30}
+                                  logoPath="/logo.png"
+                                  level="H"
+                                  bgColor="#FFFFFF"
+                                  fgColor="#000000"
+                                  frameStyle="none"
+                                  className="inline-block"
+                                />
+                              ) : (
+                                <div
+                                  className="bg-gray-100 rounded-lg flex items-center justify-center"
+                                  style={{ width: 120, height: 120 }}
+                                >
+                                  <FaSpinner className="w-6 h-6 text-gray-400 animate-spin" />
+                                </div>
+                              )}
+                              {/* QR Generation Status Overlay */}
+                              <div className="absolute top-1 right-1">
+                                {getQrStatusIcon(user._id)}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => downloadUserQR(user)}
+                              className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Download QR Code"
+                              disabled={
+                                !qrCodeBackgroundService.isQRCodeGenerated(
+                                  user._id
+                                ) || !visibleQRCodes.has(user._id)
+                              }
+                            >
+                              <FaDownload className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">
+                            No QR Code
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                        {formatDate(user.lastActiveAt)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => openPopup(user._id)}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <MdOutlineRemoveRedEye />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -492,7 +696,7 @@ const Admin = () => {
           activityData || {
             total: 0,
             websiteView: 0,
-            cardScan: 0,
+            vcardDownloads: 0,
             cardDownloads: 0,
           }
         }

@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
-    },  
+    },
     businessPhones: {
       type: [String],
       trim: true,
@@ -56,7 +56,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-  
 
     // System fields
     role: {
@@ -206,6 +205,13 @@ userSchema.index({ createdAt: -1 });
 // Virtual for full activity stats
 userSchema.virtual("activityStats", {
   ref: "UserActivity",
+  localField: "_id",
+  foreignField: "userId",
+});
+
+// Virtual for QR codes
+userSchema.virtual("qrCodes", {
+  ref: "QRCode",
   localField: "_id",
   foreignField: "userId",
 });

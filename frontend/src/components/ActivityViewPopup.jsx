@@ -41,11 +41,11 @@ const ActivityViewPopup = ({ isOpen, onClose, activityData }) => {
             <span className="font-medium">{activityData.websiteView}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-700">
-            <span>Card Scan</span>
-            <span className="font-medium">{activityData.cardScan}</span>
+            <span>vCard Downloads</span>
+            <span className="font-medium">{activityData.vcardDownloads}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-700">
-            <span>Card Downloads</span>
+            <span>Biz Card Downloads</span>
             <span className="font-medium">{activityData.cardDownloads}</span>
           </div>
         </div>

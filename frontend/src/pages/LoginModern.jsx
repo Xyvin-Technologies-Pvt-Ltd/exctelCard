@@ -139,7 +139,7 @@ export default function LoginModern() {
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
           <div className="mb-8">
             <img src="/logo.png" alt="Exctel" className="my-5 h-16" />
-            <p className="text-xl text-gray-600 font-light">Exctel Card</p>
+            <p className="text-xl text-gray-600 font-light">Exctel Connect</p>
           </div>
 
           <div className="max-w-md space-y-6 text-gray-900">

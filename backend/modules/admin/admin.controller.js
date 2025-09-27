@@ -1,6 +1,7 @@
 const User = require("../users/user.model");
 const UserActivity = require("../users/userActivity.model");
 const SSOConfig = require("./ssoConfig.model");
+const QRCodeModel = require("../qrcode/qrcode.model");
 
 /**
  * Get dashboard overview stats
@@ -73,7 +74,13 @@ const getUsers = async (req, res) => {
       .select("-password")
       .sort({ lastLogin: -1 })
       .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .populate({
+        path: "qrCodes",
+        model: "QRCode",
+        match: { isActive: true },
+        options: { sort: { createdAt: -1 }, limit: 1 },
+      });
 
     const count = await User.countDocuments(query);
 
@@ -96,20 +103,25 @@ const getUserActivity = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const activities = await UserActivity.find({ userId })
-      .sort({ timestamp: -1 })
-      .limit(50);
+    const activity = await User.findById(userId);
+    const UserActivity = activity.analytics;
 
     // Aggregate activity counts
     const activityCounts = {
-      total: activities.length,
-      websiteView: activities.filter((a) => a.type === "website_view").length,
-      cardScan: activities.filter((a) => a.type === "card_scan").length,
-      cardDownloads: activities.filter((a) => a.type === "card_download")
-        .length,
+      websiteView: UserActivity.websiteViews,
+      vcardDownloads: UserActivity.vcardDownloads,
+      cardDownloads: UserActivity.downloads,
+      profileView: UserActivity.profileViews,
+      linkClick: UserActivity.linkCopies,
+      total:
+        UserActivity.websiteViews +
+        UserActivity.vcardDownloads +
+        UserActivity.profileViews +
+        UserActivity.linkCopies +
+        UserActivity.downloads,
     };
-
-    res.json(activityCounts);
+    console.log(activityCounts);
+    res.status(200).json(activityCounts);
   } catch (error) {
     console.error("Error fetching user activity:", error);
     res.status(500).json({ message: "Error fetching user activity" });
