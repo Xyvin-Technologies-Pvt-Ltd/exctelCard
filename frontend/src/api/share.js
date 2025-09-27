@@ -77,6 +77,8 @@ export const generateVCard = (profile) => {
     ...(profile.phone ? [`TEL;TYPE=CELL:${profile.phone}`] : []),
     ...(profile.department ? [`ORG:${profile.department}`] : []),
     ...(profile.jobTitle ? [`TITLE:${profile.jobTitle}`] : []),
+    "ORG:Exctel Engineering Pte. Ltd",
+    "URL:https://exctel.com",
     ...(profile.linkedIn ? [`URL:${profile.linkedIn}`] : []),
     "END:VCARD",
   ];
