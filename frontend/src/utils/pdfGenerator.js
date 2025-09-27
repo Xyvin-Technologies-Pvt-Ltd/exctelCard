@@ -2,237 +2,96 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { createRoot } from "react-dom/client";
 import React from "react";
-import Card from "../components/Card";
+import BusinessCardPDFLayout from "../components/BusinessCardPDFLayout";
 
 /**
- * Generate PDF business card using the Card component
- * This ensures perfect design consistency with the frontend
+ * Generate PDF business card using dedicated PDF layout component
  */
 export const generateBusinessCardPDF = async (profile, shareUrl) => {
-  try {
-    // Create a temporary container for rendering the card
-    const tempContainer = document.createElement("div");
-    tempContainer.style.position = "absolute";
-    tempContainer.style.left = "-9999px";
-    tempContainer.style.top = "-9999px";
-    tempContainer.style.width = "250px"; // Portrait width
-    tempContainer.style.height = "400px"; // Portrait height
-    tempContainer.style.backgroundColor = "#ffffff";
-    document.body.appendChild(tempContainer);
-
-    // Create React root and render the card
-    const root = createRoot(tempContainer);
-
-    // Render the card component
-    root.render(
-      React.createElement(Card, {
-        user: {
-          name: profile.name,
-          title: profile.jobTitle,
-          email: profile.email,
-          phone: profile.phone,
-          phone2: profile.phone2,
-          address: profile.address,
-        },
-        qrCodeData: shareUrl || window.location.href,
-        isFlippable: false, // Don't make it flippable for PDF generation
-      })
-    );
-
-    // Wait for the component to render and images to load
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Generate canvas from the front side
-    const frontCanvas = await html2canvas(tempContainer, {
-      width: 250,
-      height: 400,
-      scale: 2, // Higher resolution
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false, // Disable console logging
-    });
-
-    // Create a new container for the back side
-    const backContainer = document.createElement("div");
-    backContainer.style.position = "absolute";
-    backContainer.style.left = "-9999px";
-    backContainer.style.top = "-9999px";
-    backContainer.style.width = "250px";
-    backContainer.style.height = "400px";
-    backContainer.style.backgroundColor = "#ffffff";
-    document.body.appendChild(backContainer);
-
-    // Create React root for back side
-    const backRoot = createRoot(backContainer);
-
-    // Render the card component
-    backRoot.render(
-      React.createElement(Card, {
-        user: {
-          name: profile.name,
-          title: profile.jobTitle,
-          email: profile.email,
-          phone: profile.phone,
-          phone2: profile.phone2,
-          address: profile.address,
-        },
-        qrCodeData: shareUrl || window.location.href,
-        isFlippable: false,
-      })
-    );
-
-    // Wait for initial render
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Force the card to show the back side by adding the flipped class
-    const cardElement = backContainer.querySelector(".card-flip-container");
-    if (cardElement) {
-      cardElement.classList.add("is-flipped");
-    }
-
-    // Wait for the back side to render
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Generate canvas from the back side
-    const backCanvas = await html2canvas(backContainer, {
-      width: 250,
-      height: 400,
-      scale: 2, // Higher resolution
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false, // Disable console logging
-    });
-
-    // Create PDF document
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: [53.98, 85.6], // Standard business card size (width x height for portrait)
-    });
-
-    // Add front side
-    const frontImgData = frontCanvas.toDataURL("image/png");
-    pdf.addImage(frontImgData, "PNG", 0, 0, 53.98, 85.6);
-
-    // Add back side on a new page
-    pdf.addPage();
-    const backImgData = backCanvas.toDataURL("image/png");
-    pdf.addImage(backImgData, "PNG", 0, 0, 53.98, 85.6);
-
-    // Clean up temporary elements
-    root.unmount();
-    backRoot.unmount();
-    document.body.removeChild(tempContainer);
-    document.body.removeChild(backContainer);
-
-    // Generate and download the PDF
-    const fileName = `${
-      profile.name?.toLowerCase().replace(/\s+/g, "_") || "business_card"
-    }.pdf`;
-    pdf.save(fileName);
-
-    return true;
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw error;
-  }
-};
-
-/**
- * Alternative method: Generate PDF with both sides on one page
- * This creates a single page with front and back side by side
- */
-export const generateBusinessCardPDFSinglePage = async (profile, shareUrl) => {
   try {
     // Create a temporary container for rendering both sides
     const tempContainer = document.createElement("div");
     tempContainer.style.position = "absolute";
     tempContainer.style.left = "-9999px";
     tempContainer.style.top = "-9999px";
-    tempContainer.style.width = "500px"; // Double width for both sides in portrait
-    tempContainer.style.height = "400px";
+    tempContainer.style.width = "540px"; // Wide enough for both cards + gap
+    tempContainer.style.height = "420px"; // Height + some padding
     tempContainer.style.backgroundColor = "#ffffff";
-    tempContainer.style.display = "flex";
-    tempContainer.style.gap = "20px";
     document.body.appendChild(tempContainer);
 
-    // Create React root
+    // Create React root and render the PDF layout
     const root = createRoot(tempContainer);
 
-    // Render both card sides side by side
+    // Render both sides using the dedicated PDF layout component
     root.render(
-      React.createElement("div", { style: { display: "flex", gap: "20px" } }, [
-        // Front side
-        React.createElement(Card, {
-          key: "front",
-          user: {
-            name: profile.name,
-            title: profile.jobTitle,
-            email: profile.email,
-            phone: profile.phone,
-            phone2: profile.phone2,
-            address: profile.address,
-          },
-          qrCodeData: shareUrl || window.location.href,
-          isFlippable: false,
-        }),
-        // Back side (manually flipped)
-        React.createElement(
-          "div",
-          {
-            key: "back",
-            style: { transform: "scaleX(-1)" }, // Flip horizontally to show back
-          },
-          React.createElement(Card, {
-            user: {
-              name: profile.name,
-              title: profile.jobTitle,
-              email: profile.email,
-              phone: profile.phone,
-              phone2: profile.phone2,
-              address: profile.address,
-            },
-            qrCodeData: shareUrl || window.location.href,
-            isFlippable: false,
-          })
-        ),
-      ])
+      React.createElement(BusinessCardPDFLayout, {
+        user: {
+          name: profile.name,
+          title: profile.jobTitle,
+          email: profile.email,
+          phone: profile.phone,
+          phone2: profile.phone2,
+          address: profile.address,
+        },
+        qrCodeData: shareUrl || window.location.href,
+      })
     );
 
-    // Wait for rendering
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Wait for the component to render and images to load
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Generate canvas
+    // Generate canvas from the rendered layout
     const canvas = await html2canvas(tempContainer, {
-      width: 500,
-      height: 400,
-      scale: 2,
+      width: 540,
+      height: 420,
+      scale: 3, // Higher resolution for better quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: "#ffffff",
+      logging: false,
     });
 
-    // Create PDF document
+    // Create PDF document - landscape to fit both cards
     const pdf = new jsPDF({
-      orientation: "portrait",
+      orientation: "landscape",
       unit: "mm",
-      format: [53.98, 85.6],
+      format: "a4", // Standard A4 paper
     });
 
-    // Add the combined image
-    const imgData = canvas.toDataURL("image/png");
-    pdf.addImage(imgData, "PNG", 0, 0, 53.98, 85.6);
+    // Calculate dimensions to fit both cards nicely on A4
+    const imgData = canvas.toDataURL("image/png", 1.0);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Clean up
+    // Calculate scale to fit the image properly
+    const canvasAspectRatio = canvas.width / canvas.height;
+    const pdfAspectRatio = pdfWidth / pdfHeight;
+
+    let finalWidth, finalHeight;
+    if (canvasAspectRatio > pdfAspectRatio) {
+      // Canvas is wider relative to its height
+      finalWidth = pdfWidth - 20; // 10mm margin on each side
+      finalHeight = finalWidth / canvasAspectRatio;
+    } else {
+      // Canvas is taller relative to its width
+      finalHeight = pdfHeight - 20; // 10mm margin on top/bottom
+      finalWidth = finalHeight * canvasAspectRatio;
+    }
+
+    // Center the image
+    const x = (pdfWidth - finalWidth) / 2;
+    const y = (pdfHeight - finalHeight) / 2;
+
+    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
+
+    // Clean up temporary elements
     root.unmount();
     document.body.removeChild(tempContainer);
 
-    // Download
+    // Generate and download the PDF
     const fileName = `${
       profile.name?.toLowerCase().replace(/\s+/g, "_") || "business_card"
-    }.pdf`;
+    }_both_sides.pdf`;
     pdf.save(fileName);
 
     return true;
@@ -242,3 +101,124 @@ export const generateBusinessCardPDFSinglePage = async (profile, shareUrl) => {
   }
 };
 
+/**
+ * Generate PDF with front and back on separate pages
+ */
+export const generateBusinessCardPDFSeparatePages = async (
+  profile,
+  shareUrl
+) => {
+  try {
+    // Create a temporary container for rendering both sides
+    const tempContainer = document.createElement("div");
+    tempContainer.style.position = "absolute";
+    tempContainer.style.left = "-9999px";
+    tempContainer.style.top = "-9999px";
+    tempContainer.style.width = "540px";
+    tempContainer.style.height = "420px";
+    tempContainer.style.backgroundColor = "#ffffff";
+    document.body.appendChild(tempContainer);
+
+    // Create React root and render the PDF layout
+    const root = createRoot(tempContainer);
+    root.render(
+      React.createElement(BusinessCardPDFLayout, {
+        user: {
+          name: profile.name,
+          title: profile.jobTitle,
+          email: profile.email,
+          phone: profile.phone,
+          phone2: profile.phone2,
+          address: profile.address,
+        },
+        qrCodeData: shareUrl || window.location.href,
+      })
+    );
+
+    // Wait for rendering
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Generate canvas
+    const canvas = await html2canvas(tempContainer, {
+      width: 540,
+      height: 420,
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+    });
+
+    // Create PDF document
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: [53.98, 85.6], // Standard business card size
+    });
+
+    const imgData = canvas.toDataURL("image/png", 1.0);
+
+    // Extract front side (left half of the canvas)
+    const frontCanvas = document.createElement("canvas");
+    const frontCtx = frontCanvas.getContext("2d");
+    frontCanvas.width = canvas.width / 2;
+    frontCanvas.height = canvas.height;
+
+    const img = new Image();
+    img.onload = () => {
+      // Draw front side (left half)
+      frontCtx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width / 2,
+        canvas.height,
+        0,
+        0,
+        frontCanvas.width,
+        frontCanvas.height
+      );
+      const frontImgData = frontCanvas.toDataURL("image/png", 1.0);
+      pdf.addImage(frontImgData, "PNG", 0, 0, 53.98, 85.6);
+
+      // Add new page for back side
+      pdf.addPage();
+
+      // Extract back side (right half of the canvas)
+      const backCanvas = document.createElement("canvas");
+      const backCtx = backCanvas.getContext("2d");
+      backCanvas.width = canvas.width / 2;
+      backCanvas.height = canvas.height;
+
+      backCtx.drawImage(
+        img,
+        canvas.width / 2,
+        0,
+        canvas.width / 2,
+        canvas.height,
+        0,
+        0,
+        backCanvas.width,
+        backCanvas.height
+      );
+      const backImgData = backCanvas.toDataURL("image/png", 1.0);
+      pdf.addImage(backImgData, "PNG", 0, 0, 53.98, 85.6);
+
+      // Clean up and save
+      root.unmount();
+      document.body.removeChild(tempContainer);
+
+      const fileName = `${
+        profile.name?.toLowerCase().replace(/\s+/g, "_") || "business_card"
+      }_separate_pages.pdf`;
+      pdf.save(fileName);
+    };
+
+    img.src = imgData;
+
+    return true;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw error;
+  }
+};

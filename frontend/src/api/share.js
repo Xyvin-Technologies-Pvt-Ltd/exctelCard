@@ -118,13 +118,23 @@ export const downloadVCard = async (profile, shareId) => {
   }
 };
 
-export const downloadPdf = async (shareId) => { 
+export const downloadBizCard = async (shareId) => {
   try {
-    const response = await api.post(`/share/${shareId}/downloadPdf`);
+    const response = await api.get(`/share/${shareId}/downloadBizCard`);
+    const a = document.createElement("a");
+    a.href = response.url;
+    a.download = "biz-card.pdf";
+    a.click();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(response.url);
+    console.log("Biz card downloaded successfully");
+    toast.success("Biz card downloaded successfully");
     return response;
   } catch (error) {
-    console.error("Error downloading PDF:", error);
-    toast.error("Failed to download PDF");
-    return false;
+    console.error("Error downloading biz card:", error);
+    toast.error("Failed to download biz card");
+    throw error;
   }
 };

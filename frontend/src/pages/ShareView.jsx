@@ -24,7 +24,7 @@ import {
   useTrackDownload,
 } from "../hooks/useShare";
 import { downloadVCard,  trackDownload } from "../api/share";
-import { generateBusinessCardPDF } from "../utils/pdfGenerator";
+import { generateBusinessCardPDF,generateBusinessCardPDFSeparatePages } from "../utils/pdfGenerator";
 
 const ShareView = () => {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ const ShareView = () => {
   const generateBusinessCardPDFFrontend = async (profile) => {
     setIsGeneratingPDF(true);
     try {
-      await generateBusinessCardPDF(profile, window.location.href);
+      await generateBusinessCardPDFSeparatePages(profile, window.location.href);
       // Show success message
       const { toast } = await import("react-hot-toast");
       toast.success("PDF downloaded successfully!");

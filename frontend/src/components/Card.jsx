@@ -6,8 +6,9 @@ import { BsMicrosoftTeams } from "react-icons/bs";
 import { RiWhatsappFill } from "react-icons/ri";
 import { FaMobileAlt } from "react-icons/fa";
 
-const Card = ({ user, qrCodeData, isFlippable }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
+  // Use initialFlipState prop to set initial state
+  const [isFlipped, setIsFlipped] = useState(initialFlipState);
 
   const handleFlip = () => {
     if (isFlippable) {
@@ -25,7 +26,6 @@ const Card = ({ user, qrCodeData, isFlippable }) => {
     >
       <div className="card-flip">
         {/* Front Side */}
-
         <div className="business-card-side business-card-front relative h-full">
           {/* Card Front Background Image */}
           <img
