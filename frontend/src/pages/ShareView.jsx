@@ -10,26 +10,7 @@ import {
   ArrowLeft,
   Building,
   MapPin,
-  ExternalLink,
-  Smartphone,
-  ChevronDown,
-  Calendar,
-  Clock,
-  Globe,
-  Briefcase,
-  GraduationCap,
-  Award,
-  MessageCircle,
-  Heart,
-  Star,
-  Plus,
-  Minus,
-  QrCode,
-  Wallet,
-  FileText,
-  Image,
-  Link,
-  ArrowRight,
+ 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
@@ -39,10 +20,10 @@ import EmptyState from "../ui/EmptyState";
 import { useUIStore } from "../store/uiStore";
 import {
   useSharedProfile,
-  useTrackProfileView,
+  useTrackWebsiteView,
   useTrackDownload,
 } from "../hooks/useShare";
-import { downloadVCard, downloadWalletPass, trackDownload } from "../api/share";
+import { downloadVCard,  trackDownload } from "../api/share";
 import { generateBusinessCardPDF } from "../utils/pdfGenerator";
 
 const ShareView = () => {
@@ -54,9 +35,8 @@ const ShareView = () => {
 
   // Fetch shared profile data
   const { data: profileData, isLoading, error } = useSharedProfile();
-  const trackViewMutation = useTrackProfileView();
+  const trackViewMutation = useTrackWebsiteView();
   const trackDownloadMutation = useTrackDownload();
-
   // Track profile view on component mount
   useEffect(() => {
     if (profileData?.profile) {
@@ -79,22 +59,26 @@ const ShareView = () => {
 
     // Track download action
     if (profile?.shareId) {
-      trackDownload(profile.shareId, "download", {
+      trackDownloadMutation.mutate({
+        shareId: profile.shareId,
+        downloadType: type,
+        metadata: {
         action: `download_${type}`,
         timestamp: new Date().toISOString(),
+        },
       });
     }
 
     switch (type) {
-      case "vcard":
+      case "vcardDownloads":
         await downloadVCard(profile, profile.shareId);
         break;
-      case "image":
+      case "bizcardDownloads":
         // Generate and download business card as PDF with both sides using frontend
         await generateBusinessCardPDFFrontend(profile);
         break;
-      case "wallet":
-        await downloadWalletPass(profile.shareId);
+      case "qrcode":
+        await downloadQRCode(profile.shareId);
         break;
       default:
         break;
@@ -152,6 +136,110 @@ const ShareView = () => {
       toast.error("Failed to generate PDF");
     } finally {
       setIsGeneratingPDF(false);
+    }
+  };
+
+  const downloadQRCode = async (shareId) => {
+    try {
+      console.log("Starting QR code download from backend...");
+
+      // Call backend API to get QR code data
+      const response = await fetch(`/api/qrcode/share/${shareId}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to get QR code: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.data.qrCode) {
+        throw new Error("No QR code data received from server");
+      }
+
+      // Convert base64 data URL to blob
+      const base64Data = result.data.qrCode.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/png" });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fileName = `${
+        profile?.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
+      }-qr-code.png`;
+
+      link.download = fileName;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log("Download initiated for:", fileName);
+
+      // Show success message
+      const { toast } = await import("react-hot-toast");
+      toast.success("QR Code downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading QR code:", error);
+
+      // Fallback: try client-side generation
+      try {
+        console.log("Falling back to client-side QR generation...");
+
+        // Find the QR code element - look for the QRCodeWithLogo component
+        let qrCodeElement =
+          document.querySelector(".block.md\\:hidden svg") ||
+          document.querySelector(".hidden.md\\:block svg") ||
+          document.querySelector("svg");
+
+        if (!qrCodeElement) {
+          throw new Error("QR code element not found");
+        }
+
+        // Get the parent container for better capture
+        const qrContainer =
+          qrCodeElement.closest(".bg-white.bg-opacity-90") ||
+          qrCodeElement.parentElement;
+
+        // Use html2canvas to capture the QR code
+        const html2canvas = (await import("html2canvas")).default;
+
+        const canvas = await html2canvas(qrContainer || qrCodeElement, {
+          backgroundColor: "#ffffff",
+          scale: 3,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          width: 200,
+          height: 200,
+        });
+
+        // Download the image
+        const link = document.createElement("a");
+        const fileName = `${
+          profile?.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
+        }-qr-code.png`;
+        link.download = fileName;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        const { toast } = await import("react-hot-toast");
+        toast.success("QR Code downloaded successfully!");
+      } catch (fallbackError) {
+        console.error("Fallback QR generation failed:", fallbackError);
+        const { toast } = await import("react-hot-toast");
+        toast.error("Failed to download QR code");
+      }
     }
   };
 
@@ -308,22 +396,22 @@ const ShareView = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
                 <Download size={16} className="mr-2" />
-                Download Business Card
+                Download Cards
               </h3>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => handleDownload("vcard")}
+                  onClick={() => handleDownload("vcardDownloads")}
                   className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
                 >
                   vCard
                 </Button>
                 <Button
-                  onClick={() => handleDownload("image")}
+                  onClick={() => handleDownload("bizcardDownloads")}
                   variant="outline"
                   className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
                   disabled={isGeneratingPDF}
                 >
-                  {isGeneratingPDF ? "Generating..." : "PDF"}
+                  {isGeneratingPDF ? "Generating..." : "BizCard"}
                 </Button>
               </div>
             </div>
@@ -339,12 +427,12 @@ const ShareView = () => {
                 Copy Link
               </Button>
               <Button
-                onClick={() => handleSaveContact()}
+                onClick={() => handleDownload("qrcode")}
                 variant="outline"
                 className="flex items-center justify-center border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 <User size={16} className="mr-2" />
-                Save Contact
+                Save QR Code
               </Button>
             </div>
           </div>

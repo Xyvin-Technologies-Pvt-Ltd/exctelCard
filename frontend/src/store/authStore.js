@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
 
 export const useAuthStore = create(
   subscribeWithSelector((set, get) => ({
@@ -33,24 +32,13 @@ export const useAuthStore = create(
         isInitialized: true,
       });
 
-      // Start background QR code generation for admin users
-      if (userData.role === "admin" || userData.role === "super_admin") {
-        console.log(
-          "🔧 Admin user detected, starting background QR code generation..."
-        );
-        // Delay the start to allow the UI to render first
-        setTimeout(() => {
-          qrCodeBackgroundService.startBackgroundGeneration();
-        }, 2000);
-      }
+    
     },
 
     logout: () => {
       // Clear token from localStorage
       localStorage.removeItem("authToken");
 
-      // Reset QR code background service
-      qrCodeBackgroundService.reset();
 
       set({
         user: null,

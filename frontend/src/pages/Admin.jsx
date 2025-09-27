@@ -5,6 +5,7 @@ import Button from "../ui/Button";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import {
   FaDownload,
+  FaExternalLinkAlt,
   FaSpinner,
   FaCheck,
   FaExclamationTriangle,
@@ -13,6 +14,8 @@ import ActivityViewPopup from "../components/ActivityViewPopup";
 import QRCodeWithLogo from "../components/QRCodeWithLogo";
 import { getUsers, getUserActivity, searchUsers } from "../api/users";
 import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
+import { downloadQRBackEnd } from "../api/qrcode";
+
 
 const Admin = () => {
   // State for tab switching
@@ -168,53 +171,7 @@ const Admin = () => {
     setSelectedActivity(null);
   };
 
-  // Download QR code for a specific user
-  const downloadUserQR = async (user) => {
-    try {
-      console.log("Starting QR code download for user:", user.name);
 
-      const qrRef = qrRefs.current[user._id];
-      if (!qrRef) {
-        console.error("QR ref not found for user:", user._id);
-        return;
-      }
-
-      const qrContainer = qrRef.current;
-      console.log("QR container found:", qrContainer);
-
-      if (!qrContainer) {
-        console.error("QR container not found");
-        return;
-      }
-
-      // Use html2canvas to capture the QR code
-      const html2canvas = (await import("html2canvas")).default;
-
-      const canvas = await html2canvas(qrContainer, {
-        backgroundColor: "#ffffff",
-        scale: 2, // Higher resolution
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-      });
-
-      console.log("Canvas generated successfully");
-
-      // Download the image
-      const link = document.createElement("a");
-      const fileName = `${
-        user.name?.toLowerCase().replace(/\s+/g, "_") || "user"
-      }-qr-code.png`;
-      link.download = fileName;
-      link.href = canvas.toDataURL("image/png");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      console.log("Download initiated for:", fileName);
-    } catch (error) {
-      console.error("Error downloading QR code:", error);
-    }
-  };
 
   // Show loading state
   if (isLoading) {
@@ -325,6 +282,12 @@ const Admin = () => {
                   >
                     QR Code
                   </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Share ID
+                  </th>
 
                   <th
                     scope="col"
@@ -385,43 +348,11 @@ const Admin = () => {
                       <td className="px-4 py-3 text-sm text-gray-500 text-left">
                         {user.shareId && user.shareId !== "" ? (
                           <div className="flex items-center space-x-2">
-                            <div
-                              className="relative"
-                              data-qr-container
-                              data-user-id={user._id}
-                            >
-                              {visibleQRCodes.has(user._id) ? (
-                                <QRCodeWithLogo
-                                  ref={qrRef}
-                                  value={`${window.location.protocol}//${window.location.hostname}/share/${user.shareId}`}
-                                  size={120}
-                                  logoSize={30}
-                                  logoPath="/logo.png"
-                                  level="H"
-                                  bgColor="#FFFFFF"
-                                  fgColor="#000000"
-                                  frameStyle="none"
-                                  className="inline-block"
-                                />
-                              ) : (
-                                <div
-                                  className="bg-gray-100 rounded-lg flex items-center justify-center"
-                                  style={{ width: 120, height: 120 }}
-                                >
-                                  <FaSpinner className="w-6 h-6 text-gray-400 animate-spin" />
-                                </div>
-                              )}
-                          
-                            </div>
+                           <img src={user.qrCode?.dataUrl} alt="QR Code" style={{width: "40px", height: "40px"}} />
                             <button
-                              onClick={() => downloadUserQR(user)}
+                              onClick={() => downloadQRBackEnd(user.shareId)}
                               className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Download QR Code"
-                              disabled={
-                                !qrCodeBackgroundService.isQRCodeGenerated(
-                                  user._id
-                                ) || !visibleQRCodes.has(user._id)
-                              }
                             >
                               <FaDownload className="w-3 h-3" />
                             </button>
@@ -431,6 +362,19 @@ const Admin = () => {
                             No QR Code
                           </span>
                         )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                        <button
+                          className="text-gray-500 hover:text-gray-700"
+                          onClick={() => {
+                            window.open(
+                              `${window.location.protocol}//${window.location.hostname}/share/${user.shareId}`,
+                              "_blank"
+                            );
+                          }}
+                        >
+                          <FaExternalLinkAlt />
+                        </button>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
                         {formatDate(user.lastActiveAt)}
@@ -452,238 +396,7 @@ const Admin = () => {
         </Card>
       )}
 
-      {/* SSO Configuration Tab */}
-      {activeTab === "sso" && (
-        <div className="space-y-6">
-          <Card>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-left">
-                SSO Configuration
-              </h2>
-              <div>
-                {!isConfiguring && (
-                  <Button
-                    variant="primary"
-                    onClick={() => setIsConfiguring(true)}
-                  >
-                    Configure SSO
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {isConfiguring ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                      SSO Provider
-                    </label>
-                    <select
-                      name="provider"
-                      value={ssoConfig.provider}
-                      onChange={handleSsoConfigChange}
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
-                    >
-                      <option value="microsoft">Microsoft Entra ID</option>
-                      <option value="google">Google Workspace</option>
-                      <option value="okta">Okta</option>
-                      <option value="auth0">Auth0</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                      Client ID
-                    </label>
-                    <input
-                      type="text"
-                      name="clientId"
-                      value={ssoConfig.clientId}
-                      onChange={handleSsoConfigChange}
-                      placeholder="Enter client ID"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                      Client Secret
-                    </label>
-                    <input
-                      type="password"
-                      name="clientSecret"
-                      value={ssoConfig.clientSecret}
-                      onChange={handleSsoConfigChange}
-                      placeholder="Enter client secret"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                      Tenant ID
-                    </label>
-                    <input
-                      type="text"
-                      name="tenantId"
-                      value={ssoConfig.tenantId}
-                      onChange={handleSsoConfigChange}
-                      placeholder="Enter tenant ID"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                      Redirect URI
-                    </label>
-                    <input
-                      type="text"
-                      name="redirectUri"
-                      value={ssoConfig.redirectUri}
-                      onChange={handleSsoConfigChange}
-                      placeholder="Enter redirect URI"
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                      Default Role
-                    </label>
-                    <select
-                      name="defaultRole"
-                      value={ssoConfig.defaultRole}
-                      onChange={handleSsoConfigChange}
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500"
-                    >
-                      <option value="employee">Employee</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center mt-4">
-                  <input
-                    id="autoProvisioning"
-                    name="autoProvisioning"
-                    type="checkbox"
-                    checked={ssoConfig.autoProvisioning}
-                    onChange={handleSsoConfigChange}
-                    className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="autoProvisioning"
-                    className="ml-2 block text-sm text-gray-700 text-left"
-                  >
-                    Enable auto-provisioning for new users
-                  </label>
-                </div>
-
-                <div className="flex justify-end space-x-3 mt-6">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsConfiguring(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button variant="primary" onClick={saveSsoConfiguration}>
-                    Save Configuration
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-50 p-6 rounded-md">
-                <div className="flex items-center mb-4">
-                  <div className="rounded-full bg-gray-100 p-3 mr-3">
-                    <svg
-                      className="h-6 w-6 text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Single Sign-On
-                    </h3>
-                    <p className="text-gray-500">
-                      Configure SSO authentication for your organization
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="p-4 border border-gray-200 rounded-md text-left">
-                    <h4 className="font-medium text-gray-900 mb-2">
-                      Microsoft Entra ID
-                    </h4>
-                    <p className="text-gray-500 text-sm mb-3">
-                      Connect with Microsoft Entra ID (formerly Azure AD) for
-                      seamless integration with Microsoft 365
-                    </p>
-                    <span className="text-xs text-gray-500">
-                      Status: Not configured
-                    </span>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 text-left">
-                  Configure SSO to enable seamless login for your users and
-                  reduce password fatigue. We support various identity
-                  providers, including Microsoft Entra ID, Google Workspace,
-                  Okta, and more.
-                </p>
-              </div>
-            )}
-          </Card>
-
-          <Card>
-            <h2 className="text-xl font-semibold mb-4 text-left">
-              User Provisioning
-            </h2>
-            <div className="mb-6">
-              <p className="text-gray-600 mb-4 text-left">
-                Choose how new users are added to the system and what default
-                permissions they receive.
-              </p>
-              <div className="py-4">
-                <div className="flex items-start mt-4">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="autoProvisioning"
-                      name="provisioning"
-                      type="radio"
-                      className="h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm text-left">
-                    <label
-                      htmlFor="autoProvisioning"
-                      className="font-medium text-gray-700"
-                    >
-                      Auto Provisioning
-                    </label>
-                    <p className="text-gray-500">
-                      Users are automatically created when they authenticate via
-                      SSO
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button variant="primary">Save Settings</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+   
 
       {/* Activity View Popup */}
       <ActivityViewPopup

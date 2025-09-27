@@ -121,7 +121,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/share", shareRoutes);
-app.use("/api/qr", qrcodeRoutes);
+app.use("/api/qrcode", qrcodeRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -3,26 +3,15 @@ const router = express.Router();
 const qrcodeController = require("./qrcode.controller");
 const { authenticateToken } = require("../../middlewares/auth.middleware");
 
-// All routes require authentication
-router.use(authenticateToken);
+// Public routes (no auth required)
 
-// Get QR code history
-router.get("/history", qrcodeController.getQRHistory);
 
-// Generate new QR code
-router.post("/generate", qrcodeController.generateQRCodeEndpoint);
+// // Protected routes (auth required)
+// router.use(authenticateToken);
 
-// Update QR code
-router.put("/:qrId", qrcodeController.updateQRCode);
-
-// Delete QR code
-router.delete("/:qrId", qrcodeController.deleteQRCode);
-
-// Get QR code analytics
-router.get("/:qrId/analytics", qrcodeController.getQRAnalytics);
-
-// Track QR code scan (public route - no auth required)
-router.post("/:shareId/scan", qrcodeController.trackQRScan);
+// Get user's QR code (from user model)
+router.get("/share/:shareId", qrcodeController.downloadQRCode);
+// // Download user's QR code
+// router.get("/user/download", qrcodeController.downloadUserQRCode);
 
 module.exports = router;
-

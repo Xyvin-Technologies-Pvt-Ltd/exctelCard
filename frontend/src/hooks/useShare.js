@@ -2,7 +2,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import {
   getSharedProfile,
-  trackProfileView,
   trackWebsiteView,
   trackDownload,
 } from "../api/share";
@@ -21,16 +20,7 @@ export const useSharedProfile = () => {
   });
 };
 
-// Hook to track profile views
-export const useTrackProfileView = () => {
-  return useMutation({
-    mutationFn: ({ shareId, metadata }) => trackProfileView(shareId, metadata),
-    // Don't show loading states for tracking
-    onError: (error) => {
-      console.error("Failed to track profile view:", error);
-    },
-  });
-};
+
 
 // Hook to track website views
 export const useTrackWebsiteView = () => {

@@ -72,6 +72,8 @@ exports.trackProfileView = async (req, res) => {
       ...metadata
     } = req.body;
 
+    console.log("📥 Track profile view for:", req.body);
+
     if (!shareId) {
       return res.status(400).json({
         success: false,
@@ -113,7 +115,6 @@ exports.trackProfileView = async (req, res) => {
         await UserActivity.trackActivity({
           userId: user._id,
           activityType: "website_view",
-          source: "share",
           visitorInfo: {
             ipAddress: req.ip,
             userAgent: req.get("User-Agent"),
@@ -121,93 +122,33 @@ exports.trackProfileView = async (req, res) => {
         });
         break;
 
-      case "profile_view":
-        updateObj.$inc = {
-          profileViewCount: 1,
-          "analytics.profileViews": 1,
-        };
-        console.log(`👁️ Profile view tracked for ${user.name} (${shareId})`);
-        await UserActivity.trackActivity({
-          userId: user._id,
-          activityType: "profile_view",
-          source: "share",
-          visitorInfo: {
-            ipAddress: req.ip,
-            userAgent: req.get("User-Agent"),
-          },
-        });
-        break;
-
+   
       case "download":
         updateObj.$inc = {
           "analytics.downloads": 1,
         };
 
         // Track specific download types
-        if (downloadType === "vcard") {
+        if (downloadType === "vcardDownloads") {
           updateObj.$inc["analytics.vcardDownloads"] = 1;
           console.log(`📥 vCard download tracked for  (${shareId})`);
-        } else if (downloadType === "link_copy") {
-          updateObj.$inc["analytics.linkCopies"] = 1;
+        } else if (downloadType === "qrcodeDownloads") {
+          updateObj.$inc["analytics.qrcodeDownloads"] = 1;
           console.log(`🔗 Link copy tracked for ${user.name} (${shareId})`);
-          await UserActivity.trackActivity({
-            userId: user._id,
-            activityType: "link_click",
-            source: "share_link",
-            visitorInfo: {
-              ipAddress: req.ip,
-              userAgent: req.get("User-Agent"),
-            },
-          });
-        }
+        } else if (downloadType === "bizcardDownloads") {
+          updateObj.$inc["analytics.bizcardDownloads"] = 1;
+          console.log(`🔗 Link copy tracked for ${user.name} (${shareId})`);
+        } 
+         
+        
         break;
 
-      case "contact_interaction":
-        updateObj.$inc = {
-          "analytics.contactInteractions": 1,
-        };
-
-        // Track specific contact types
-        if (contactType === "email") {
-          updateObj.$inc["analytics.emailClicks"] = 1;
-          console.log(`📧 Email click tracked for ${user.name} (${shareId})`);
-        } else if (contactType === "phone") {
-          updateObj.$inc["analytics.phoneClicks"] = 1;
-          console.log(`📞 Phone click tracked for ${user.name} (${shareId})`);
-        } else if (contactType === "linkedin") {
-          updateObj.$inc["analytics.linkedinClicks"] = 1;
-          console.log(
-            `💼 LinkedIn click tracked for ${user.name} (${shareId})`
-          );
-          await UserActivity.trackActivity({
-            userId: user._id,
-            activityType: "link_click",
-            source: "share_link",
-            visitorInfo: {
-              ipAddress: req.ip,
-              userAgent: req.get("User-Agent"),
-            },
-          });
-        }
-        break;
-
+   
       default:
-        // Default to profile view
-        updateObj.$inc = {
-          profileViewCount: 1,
-          "analytics.profileViews": 1,
-        };
+        //do nothing
         console.log(`👁️ Default view tracked for ${user.name} (${shareId})`);
         //add log for default view
-        await UserActivity.trackActivity({
-          userId: user._id,
-          activityType: "profile_view",
-          source: "share_link",
-          visitorInfo: {
-            ipAddress: req.ip,
-            userAgent: req.get("User-Agent"),
-          },
-        });
+      
     }
 
     // Update user analytics
@@ -216,7 +157,7 @@ exports.trackProfileView = async (req, res) => {
     res.json({
       success: true,
       message: "Interaction tracked successfully",
-      trackingType: viewType || "profile_view",
+      trackingType: viewType || "default",
     });
   } catch (error) {
     console.error("Error tracking profile interaction:", error);

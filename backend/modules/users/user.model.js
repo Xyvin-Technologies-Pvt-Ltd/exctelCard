@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const crypto = require("crypto");
 const userSchema = new mongoose.Schema(
   {
     // Entra ID / SSO fields (read-only)
@@ -101,6 +101,30 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // QR Code settings
+    qrCode: {
+      dataUrl: {
+        type: String, // Base64 encoded QR code image
+        default: null,
+      },
+      size: {
+        type: Number,
+        default: 200,
+      },
+      logoSize: {
+        type: Number,
+        default: 45,
+      },
+      generatedAt: {
+        type: Date,
+        default: null,
+      },
+      version: {
+        type: String,
+        default: null, // Track QR code version for cache busting
+      },
+    },
     profileViewCount: {
       type: Number,
       default: 0,
@@ -117,13 +141,9 @@ const userSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      profileViews: {
-        type: Number,
-        default: 0,
-      },
-
+    
       // Download tracking
-      downloads: {
+      bizcardDownloads: {
         type: Number,
         default: 0,
       },
@@ -131,28 +151,13 @@ const userSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      linkCopies: {
+      qrcodeDownloads: {
         type: Number,
         default: 0,
       },
 
-      // Contact interaction tracking
-      contactInteractions: {
-        type: Number,
-        default: 0,
-      },
-      emailClicks: {
-        type: Number,
-        default: 0,
-      },
-      phoneClicks: {
-        type: Number,
-        default: 0,
-      },
-      linkedinClicks: {
-        type: Number,
-        default: 0,
-      },
+
+   
 
       // Timestamps
       firstViewAt: {
@@ -199,30 +204,15 @@ const userSchema = new mongoose.Schema(
 // Indexes for performance
 userSchema.index({ email: 1, isActive: 1 });
 userSchema.index({ department: 1, isActive: 1 });
-userSchema.index({ lastLoginAt: -1 });
+userSchema.index({ lastActiveAt: -1 }); // For admin sorting
 userSchema.index({ createdAt: -1 });
+userSchema.index({ name: 1 }); // For search
+userSchema.index({ shareId: 1 }); // For QR code lookups
+userSchema.index({ isActive: 1, lastActiveAt: -1 }); // Compound index for admin queries
 
-// Virtual for full activity stats
-userSchema.virtual("activityStats", {
-  ref: "UserActivity",
-  localField: "_id",
-  foreignField: "userId",
-});
 
-// Virtual for QR codes
-userSchema.virtual("qrCodes", {
-  ref: "QRCode",
-  localField: "_id",
-  foreignField: "userId",
-});
 
-// Instance method to generate share ID
-userSchema.methods.generateShareId = function () {
-  if (!this.shareId) {
-    this.shareId = require("crypto").randomBytes(8).toString("hex");
-  }
-  return this.shareId;
-};
+
 
 // Instance method to update last login
 userSchema.methods.updateLastLogin = function () {
@@ -254,44 +244,11 @@ userSchema.statics.getAdminStats = async function () {
   };
 };
 
-// Static method to search users for admin
-userSchema.statics.searchForAdmin = async function (
-  searchTerm = "",
-  page = 1,
-  limit = 20
-) {
-  const skip = (page - 1) * limit;
-
-  let query = {};
-  if (searchTerm) {
-    query = {
-      $or: [
-        { name: { $regex: searchTerm, $options: "i" } },
-        { email: { $regex: searchTerm, $options: "i" } },
-        { department: { $regex: searchTerm, $options: "i" } },
-        { jobTitle: { $regex: searchTerm, $options: "i" } },
-      ],
-    };
+userSchema.methods.generateShareId = function () {
+  if (this.shareId) {
+    return;
   }
-
-  const users = await this.find(query)
-    .sort({ lastLoginAt: -1, createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate("activityStats")
-    .lean();
-
-  const total = await this.countDocuments(query);
-
-  return {
-    users,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit),
-    },
-  };
+  this.shareId = crypto.randomBytes(8).toString("hex");
 };
 
 // Pre-save middleware to generate share ID if needed

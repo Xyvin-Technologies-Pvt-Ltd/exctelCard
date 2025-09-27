@@ -17,7 +17,7 @@ import Card from "../ui/Card";
 import { useAuthStore } from "../store/authStore";
 import { useProfileOperations } from "../hooks/useProfile";
 import { useProfileStore } from "../store/profileStore";
-import { generateQRCode, trackQRScan } from "../api/qrcode";
+import { downloadQRBackEnd } from "../api/qrcode";
 
 export default function QRCode() {
   const navigate = useNavigate();
@@ -40,9 +40,27 @@ export default function QRCode() {
 
   const { directShareableUrl, hasShareId } = generateUrls(currentProfile);
 
-  const downloadQR = () => {
+  const downloadQR = async () => {
     try {
-      console.log("Starting QR code download...");
+      console.log("Starting QR code download from backend...");
+
+      // First try to get QR code from backend
+      if (hasShareId && currentProfile.shareId) {
+        try {
+          const response = await downloadQRBackEnd(currentProfile.shareId);
+console.log(response);
+      
+         return;
+        } catch (backendError) {
+          console.warn(
+            "Backend QR download failed, falling back to client-side:",
+            backendError
+          );
+        }
+      }
+
+      // Fallback to client-side generation
+      console.log("Falling back to client-side QR generation...");
 
       // Get the QR code container element
       const qrContainer = qrRef.current;
@@ -54,80 +72,37 @@ export default function QRCode() {
       }
 
       // Use html2canvas to capture the QR code with logo
-      import("html2canvas")
-        .then((html2canvas) => {
-          console.log("html2canvas loaded successfully");
-          html2canvas
-            .default(qrContainer, {
-              backgroundColor: "#ffffff",
-              scale: 2, // Higher resolution
-              useCORS: true,
-              allowTaint: true,
-              logging: true, // Enable logging for debugging
-            })
-            .then((canvas) => {
-              console.log("Canvas generated successfully");
-              // Download the image
-              const link = document.createElement("a");
-              const fileName = `${
-                currentProfile.name?.toLowerCase().replace(/\s+/g, "_") ||
-                "profile"
-              }-qr-code.png`;
-              link.download = fileName;
-              link.href = canvas.toDataURL("image/png");
-              document.body.appendChild(link); // Required for some browsers
-              link.click();
-              document.body.removeChild(link); // Clean up
-              console.log("Download initiated for:", fileName);
-            })
-            .catch((error) => {
-              console.error("Error generating canvas:", error);
-              // Fallback to SVG download if html2canvas fails
-              downloadQRAsSVG();
-            });
-        })
-        .catch((error) => {
-          console.error("Error loading html2canvas:", error);
-          // Fallback to SVG download if html2canvas is not available
-          downloadQRAsSVG();
-        });
-    } catch (error) {
-      console.error("Error downloading QR code:", error);
-    }
-  };
+      const html2canvas = (await import("html2canvas")).default;
+      console.log("html2canvas loaded successfully");
 
-  const downloadQRAsSVG = () => {
-    try {
-      console.log("Attempting SVG download fallback...");
-      const svg = qrRef.current?.querySelector("svg");
-      console.log("SVG element found:", svg);
-
-      if (!svg) {
-        console.error("SVG element not found");
-        return;
-      }
-
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const svgBlob = new Blob([svgData], {
-        type: "image/svg+xml;charset=utf-8",
+      const canvas = await html2canvas(qrContainer, {
+        backgroundColor: "#ffffff",
+        scale: 2, // Higher resolution
+        useCORS: true,
+        allowTaint: true,
+        logging: true, // Enable logging for debugging
       });
-      const url = URL.createObjectURL(svgBlob);
 
+      console.log("Canvas generated successfully");
+      // Download the image
       const link = document.createElement("a");
       const fileName = `${
         currentProfile.name?.toLowerCase().replace(/\s+/g, "_") || "profile"
-      }-qr-code.svg`;
+      }-qr-code.png`;
       link.download = fileName;
-      link.href = url;
+      link.href = canvas.toDataURL("image/png");
       document.body.appendChild(link); // Required for some browsers
       link.click();
       document.body.removeChild(link); // Clean up
-      URL.revokeObjectURL(url);
-      console.log("SVG download initiated for:", fileName);
+      console.log("Download initiated for:", fileName);
     } catch (error) {
-      console.error("Error downloading SVG:", error);
+      console.error("Error downloading QR code:", error);
+      // Final fallback to SVG download
+    
     }
   };
+
+ 
 
   const shareQR = async () => {
     try {
@@ -146,37 +121,9 @@ export default function QRCode() {
     }
   };
 
-  const handleGenerateShareId = async () => {
-    try {
-      await generateShareId();
-      // Generate QR code with logo after share ID is created
-      if (hasShareId) {
-        await generateQRCodeWithLogo();
-      }
-    } catch (error) {
-      console.error("Error generating share ID:", error);
-    }
-  };
 
-  const generateQRCodeWithLogo = async () => {
-    try {
-      if (hasShareId && directShareableUrl) {
-        await generateQRCode({
-          shareId: currentProfile.shareId,
-          url: directShareableUrl,
-          size: 200,
-          logoSize: 45,
-          logoPath: "/logo.png",
-          level: "H",
-          bgColor: "#FFFFFF",
-          fgColor: "#000000",
-        });
-      }
-    } catch (error) {
-      console.error("Error generating QR code with logo:", error);
-    }
-  };
 
+ 
   const handleCopyLink = () => {
     copyToClipboard(directShareableUrl, "shareLink");
   };
@@ -384,45 +331,7 @@ export default function QRCode() {
           </div>
         ) : (
           // No Share ID - Generate First
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center max-w-2xl mx-auto">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FaQrcode className="w-12 h-12 text-gray-600" />
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Generate Your QR Code
-            </h2>
-
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Create a shareable QR code for your digital business card. Anyone
-              can scan it to instantly access your contact information.
-            </p>
-
-            <Button
-              onClick={handleGenerateShareId}
-              variant="default"
-              className="px-8 py-3 text-lg bg-gray-900 text-white hover:bg-gray-800"
-              loading={isGeneratingShareId}
-              disabled={isGeneratingShareId}
-            >
-              {isGeneratingShareId ? (
-                "Generating..."
-              ) : (
-                <>
-                  <FaQrcode className="mr-2" />
-                  Generate QR Code
-                </>
-              )}
-            </Button>
-
-            <div className="mt-8 p-4 bg-gray-50 rounded-xl">
-              <p className="text-sm text-gray-600">
-                <strong>Note:</strong> You need to generate a share link first
-                before creating a QR code. This ensures your digital business
-                card is accessible to others.
-              </p>
-            </div>
-          </div>
+          <></>
         )}
       </div>
     </div>

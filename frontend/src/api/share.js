@@ -18,22 +18,7 @@ export const getSharedProfile = async (shareId) => {
 };
 
 // Track profile view activity
-export const trackProfileView = async (shareId, metadata = {}) => {
-  try {
-    const response = await api.post(`/share/${shareId}/view`, {
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      referrer: document.referrer,
-      viewType: "profile_view",
-      ...metadata,
-    });
-    return response.data;
-  } catch (error) {
-    // Don't show error toast for tracking failures
-    console.error("Error tracking profile view:", error);
-    // Don't throw error to avoid breaking the main functionality
-  }
-};
+
 
 // Track website view (when someone visits the share link)
 export const trackWebsiteView = async (shareId, metadata = {}) => {
@@ -58,15 +43,16 @@ export const trackWebsiteView = async (shareId, metadata = {}) => {
 // Track download activity (when someone downloads vCard)
 export const trackDownload = async (
   shareId,
-  downloadType = "vcard",
+  downloadType = "vcardDownloads",
   metadata = {}
 ) => {
   try {
+    console.log("📥 Download tracked for:", shareId, "Type:", downloadType, "Metadata:", metadata);
     const response = await api.post(`/share/${shareId}/view`, {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       referrer: document.referrer,
-      viewType: "download",
+      viewType: "download", 
       downloadType: downloadType,
       url: window.location.href,
       ...metadata,
@@ -82,19 +68,19 @@ export const trackDownload = async (
 
 // Generate vCard for contact download with tracking
 export const generateVCard = (profile) => {
-  const vcard = [
+  const lines = [
     "BEGIN:VCARD",
     "VERSION:3.0",
     `FN:${profile.name || ""}`,
-    `EMAIL:${profile.email || ""}`,
-    `TEL:${profile.phone || ""}`,
-    `ORG:${profile.department || ""}`,
-    `TITLE:${profile.jobTitle || ""}`,
+    `N:${(profile.name || "").split(" ").slice(-1)};${(profile.name || "").split(0, -1).join(" ")};;;`,
+    ...(profile.email ? [`EMAIL;TYPE=INTERNET:${profile.email}`] : []),
+    ...(profile.phone ? [`TEL;TYPE=CELL:${profile.phone}`] : []),
+    ...(profile.department ? [`ORG:${profile.department}`] : []),
+    ...(profile.jobTitle ? [`TITLE:${profile.jobTitle}`] : []),
     ...(profile.linkedIn ? [`URL:${profile.linkedIn}`] : []),
     "END:VCARD",
-  ].join("\n");
-
-  return vcard;
+  ];
+  return lines.join("\n");
 };
 
 // Enhanced download function with tracking
@@ -102,28 +88,22 @@ export const downloadVCard = async (profile, shareId) => {
   try {
     // Track the download before generating the file
     if (shareId) {
-      await trackDownload(shareId, "vcard", {
+      await trackDownload(shareId, "vcardDownloads", {
         profileName: profile.name,
-        fileName: `${
-          profile.name?.toLowerCase().replace(/\s+/g, "_") || "contact"
-        }.vcf`,
+        downloadType: "vcardDownloads",
       });
     }
-
-    // Generate and download the vCard
     const vcard = generateVCard(profile);
-    const blob = new Blob([vcard], { type: "text/vcard" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `${profile.name?.toLowerCase().replace(/\s+/g, "_") || "contact"}.vcf`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+  
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${profile.name || "contact"}.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
     // Show success message
     toast.success("Contact saved successfully!");
@@ -136,93 +116,13 @@ export const downloadVCard = async (profile, shareId) => {
   }
 };
 
-export const downloadWalletPass = async (shareId) => {
+export const downloadPdf = async (shareId) => { 
   try {
-    const response = await fetch(`/api/share/${shareId}/downloadWalletPass`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        downloadType: "wallet",
-        viewType: "download",
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Get the blob directly
-    const blob = await response.blob();
-
-    // Create and click download link
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "business-card.pkpass";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-
-    toast.success("Added to Apple Wallet!");
-  } catch (error) {
-    console.error("Error downloading wallet pass:", error);
-    toast.error("Failed to add to Apple Wallet");
-    throw error;
-  }
-};
-
-export const downloadPdf = async (shareId) => {
-  try {
-    // Use fetch directly to get binary data
-    const response = await fetch(`/api/share/${shareId}/downloadPdf`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        downloadType: "pdf",
-        viewType: "download",
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Get the filename from the Content-Disposition header if available
-    const contentDisposition = response.headers.get("Content-Disposition");
-    let filename = "business-card.pdf";
-    if (contentDisposition) {
-      const matches = /filename="(.+)"/.exec(contentDisposition);
-      if (matches) {
-        filename = matches[1];
-      }
-    }
-
-    // Get the blob directly
-    const blob = await response.blob();
-
-    // Create and click download link
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-
-    toast.success("PDF downloaded successfully!");
+    const response = await api.post(`/share/${shareId}/downloadPdf`);
+    return response;
   } catch (error) {
     console.error("Error downloading PDF:", error);
     toast.error("Failed to download PDF");
-    throw error;
+    return false;
   }
 };

@@ -241,3 +241,4 @@ export const generateBusinessCardPDFSinglePage = async (profile, shareUrl) => {
     throw error;
   }
 };
+

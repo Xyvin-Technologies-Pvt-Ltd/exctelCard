@@ -10,6 +10,7 @@ const {
 const User = require("../users/user.model");
 const UserActivity = require("../users/userActivity.model");
 const bcrypt = require("bcrypt");
+const qrCodeService = require("../../services/qrCodeService");
 
 // Initialize MSAL instance
 const msalInstance = new ConfidentialClientApplication(azureConfig);
@@ -84,7 +85,6 @@ const initiateLogin = async (req, res) => {
  * Handle OAuth callback from Azure AD
  */
 const handleCallback = async (req, res) => {
-  
   try {
     const { code, state, error, error_description } = req.query;
 
@@ -192,6 +192,7 @@ const handleCallback = async (req, res) => {
         name: azureUserInfo.name,
         tenantId: azureUserInfo.tenantId,
         role: "user",
+        shareId: azureUserInfo.shareId,
         loginType: "sso",
         isActive: true,
         isEmailVerified: true,
@@ -225,6 +226,23 @@ const handleCallback = async (req, res) => {
       },
     });
 
+    // Generate QR code for user if they have a shareId
+    try {
+      if (user.shareId) {
+        console.log("🔲 Generating QR code for user:", user.email);
+        await qrCodeService.generateAndSaveQRCode(user, FRONTEND_URL, {
+          size: 200,
+          logoSize: 45,
+        });
+        console.log("✅ QR code generated successfully");
+      } else {
+        console.log("⚠️ User has no shareId, skipping QR code generation");
+      }
+    } catch (qrError) {
+      console.error("❌ Error generating QR code:", qrError.message);
+      // Don't fail the login if QR generation fails
+    }
+
     // Generate JWT token for our application
     const jwt = require("jsonwebtoken");
     const appToken = jwt.sign(
@@ -256,9 +274,7 @@ const handleCallback = async (req, res) => {
 
     // Redirect to frontend login page with token for processing
     res.redirect(
-      `${
-        FRONTEND_URL || "https://bizcard.exctel.com"
-      }/login?token=${appToken}`
+      `${FRONTEND_URL || "http://localhost:5173"}/login?token=${appToken}`
     );
   } catch (error) {
     console.error("Error handling callback:", error);
@@ -290,6 +306,7 @@ const getProfile = async (req, res) => {
         email: req.user.email,
         name: req.user.name,
         tenantId: req.user.tenantId,
+        
       },
     });
   } catch (error) {

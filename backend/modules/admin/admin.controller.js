@@ -1,7 +1,6 @@
 const User = require("../users/user.model");
 const UserActivity = require("../users/userActivity.model");
 const SSOConfig = require("./ssoConfig.model");
-const QRCodeModel = require("../qrcode/qrcode.model");
 
 /**
  * Get dashboard overview stats
@@ -60,8 +59,8 @@ const getDashboardStats = async (req, res) => {
  */
 const getUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search } = req.query;
-    const query = {};
+    const { page = 1, limit = 50, search } = req.query; // Increased default limit
+    const query = { isActive: true }; // Only get active users
 
     if (search) {
       query.$or = [
@@ -70,21 +69,21 @@ const getUsers = async (req, res) => {
       ];
     }
 
-    const users = await User.find(query)
-      .select("-password")
-      .sort({ lastLogin: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .populate({
-        path: "qrCodes",
-        model: "QRCode",
-        match: { isActive: true },
-        options: { sort: { createdAt: -1 }, limit: 1 },
-      });
+    // Use Promise.all for parallel execution
+    const [users, count] = await Promise.all([
+      User.find(query)
+        .select(
+          "email shareId name jobTitle qrCode department profileImage phone lastActiveAt _id"
+        )
+        .sort({ lastActiveAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .lean(), // Use lean() for better performance
+      User.countDocuments(query),
+    ]);
 
-    const count = await User.countDocuments(query);
-
-    res.json({
+    res.status(200).json({
+      success: true,
       users,
       totalPages: Math.ceil(count / limit),
       currentPage: page,

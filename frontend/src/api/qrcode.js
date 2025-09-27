@@ -1,31 +1,18 @@
 import api from "./index";
 import toast from "react-hot-toast";
 
-// Get QR code history
-export const getQRHistory = async () => {
-  try {
-    const response = await api.get("/api/qr/history");
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching QR history:", error);
-    toast.error("Failed to load QR code history");
-    throw error;
-  }
-};
+
 
 // Generate new QR code with logo
-export const generateQRCode = async (qrData) => {
+export const downloadQRBackEnd = async (shareId) => {
   try {
-    const response = await api.post("/api/qr/generate", {
-      shareId: qrData.shareId,
-      qrData: qrData.url,
-      size: qrData.size || 200,
-      logoSize: qrData.logoSize || 45,
-      logoPath: qrData.logoPath || "/logo.png",
-      level: qrData.level || "H",
-      bgColor: qrData.bgColor || "#FFFFFF",
-      fgColor: qrData.fgColor || "#000000",
-    });
+    const response = await api.get(`/qrcode/share/${shareId}`) 
+    if(response.success){
+      const link = document.createElement("a");
+      link.href = response.url;
+      link.download = "qr-code.png";
+      link.click();
+    }
     toast.success("QR code generated successfully");
     return response.data;
   } catch (error) {
@@ -35,52 +22,4 @@ export const generateQRCode = async (qrData) => {
   }
 };
 
-// Update QR code
-export const updateQRCode = async (qrId, qrData) => {
-  try {
-    const response = await api.put(`/api/qr/${qrId}`, qrData);
-    toast.success("QR code updated successfully");
-    return response.data;
-  } catch (error) {
-    console.error("Error updating QR code:", error);
-    toast.error("Failed to update QR code");
-    throw error;
-  }
-};
 
-// Delete QR code
-export const deleteQRCode = async (qrId) => {
-  try {
-    const response = await api.delete(`/api/qr/${qrId}`);
-    toast.success("QR code deleted successfully");
-    return response.data;
-  } catch (error) {
-    console.error("Error deleting QR code:", error);
-    toast.error("Failed to delete QR code");
-    throw error;
-  }
-};
-
-// Get QR code analytics
-export const getQRAnalytics = async (qrId) => {
-  try {
-    const response = await api.get(`/api/qr/${qrId}/analytics`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching QR analytics:", error);
-    toast.error("Failed to load QR code analytics");
-    throw error;
-  }
-};
-
-// Track QR code scan
-export const trackQRScan = async (shareId) => {
-  try {
-    const response = await api.post(`/api/qr/${shareId}/scan`);
-    return response.data;
-  } catch (error) {
-    console.error("Error tracking QR scan:", error);
-    // Don't show toast for scan tracking errors as it's not critical
-    throw error;
-  }
-};

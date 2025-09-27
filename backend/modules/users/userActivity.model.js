@@ -13,42 +13,18 @@ const userActivitySchema = new mongoose.Schema(
     activityType: {
       type: String,
       enum: [
-        "profile_view", // Someone viewed the user's profile
-        "qr_scan", // QR code was scanned
-        "card_download", // Business card was downloaded
-        "link_click", // Profile link was clicked
-        "contact_save", // Contact was saved to phone
-        "linkedin_click", // LinkedIn profile was clicked
-        "phone_click", // Phone number was clicked
-        "email_click", // Email was clicked
-        "profile_share", // Profile was shared
-        "login", // User logged in
-        "profile_update", // User updated their profile,
-        "website_view", // Website view
+        "login",
+        "qrcodeDownloads", // Profile link was clicked
+        "bizcardDownloads", // Contact was saved to phone
+        "website_view", // Profile was shared
+        "vcardDownloads", // vCard was downloaded 
+       
       ],
       required: true,
       index: true,
     },
 
-    // Source information
-    source: {
-      type: String,
-      enum: [
-        "qr_code",
-        "direct_link",
-        "share_link",
-        "email",
-        "social_media",
-        "search",
-        "unknown",
-        "sso",
-        "share",
-        "share_link"
-
-      ],
-      default: "unknown",
-    },
-
+   
     // Visitor information (who performed the action)
     visitorInfo: {
       ipAddress: String,
@@ -74,15 +50,6 @@ const userActivitySchema = new mongoose.Schema(
     // Session tracking
     sessionId: String,
 
-    // Geographic data
-    location: {
-      country: String,
-      countryCode: String,
-      region: String,
-      city: String,
-      latitude: Number,
-      longitude: Number,
-    },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt
