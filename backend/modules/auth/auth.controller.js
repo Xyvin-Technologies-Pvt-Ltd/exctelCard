@@ -531,6 +531,33 @@ const getGraphAccessToken = async () => {
   }
 };
 
+// Add this helper function before autoSyncUsers
+async function fetchUserPhoto(principalId, token) {
+  try {
+    const photoResponse = await axios.get(
+      `https://graph.microsoft.com/v1.0/users/${principalId}/photo/$value`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer'
+      }
+    );
+
+    // Convert image to base64
+    const base64Image = Buffer.from(photoResponse.data, 'binary').toString('base64');
+    const contentType = photoResponse.headers['content-type'] || 'image/jpeg';
+    
+    return `data:${contentType};base64,${base64Image}`;
+  } catch (photoError) {
+    if (photoError.response?.status === 404) {
+      console.log(`   No photo available for user ${principalId}`);
+      return null;
+    }
+    console.error(`   Photo fetch error:`, photoError.message);
+    return null;
+  }
+}
 /**
  * Fetch users from Microsoft Graph API
  */
@@ -780,7 +807,9 @@ async function autoSyncUsers(req, res) {
             console.warn(`⚠️ User ${principalId} has no email, skipping`);
             stats.skipped++;
             continue;
-          }
+          }// Fetch the actual photo
+console.log(`📸 Fetching profile photo...`);
+const profileImageData = await fetchUserPhoto(principalId, token);
 
           console.log(`📧 Email: ${userEmail} , Entra ID: ${principalId}`);
           processedAzureIds.add(principalId);
@@ -807,6 +836,7 @@ async function autoSyncUsers(req, res) {
               city: graphUser.city || "",
               state: graphUser.state || "",
               country: graphUser.countryOrRegion || "",
+              profileImage: profileImageData || "",
               postalCode: graphUser.postalCode || "",
               phone: graphUser.mobilePhone || null,
               businessPhones: graphUser.businessPhones || [],
@@ -841,6 +871,9 @@ async function autoSyncUsers(req, res) {
 
             if (existingUser.name !== graphUser.displayName) {
               updatedFields.name = graphUser.displayName;
+            }
+            if (existingUser.profileImage !== profileImageData) {
+              updatedFields.profileImage = profileImageData;
             }
             if (existingUser.email !== userEmail.toLowerCase()) {
               updatedFields.email = userEmail.toLowerCase();
