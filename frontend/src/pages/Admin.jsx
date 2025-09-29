@@ -9,13 +9,14 @@ import {
   FaSpinner,
   FaCheck,
   FaExclamationTriangle,
+  FaSync,
 } from "react-icons/fa";
 import ActivityViewPopup from "../components/ActivityViewPopup";
 import QRCodeWithLogo from "../components/QRCodeWithLogo";
 import { getUsers, getUserActivity, searchUsers } from "../api/users";
 import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
 import { downloadQRBackEnd } from "../api/qrcode";
-
+import { autoSyncUsers } from "../api/auth";
 
 const Admin = () => {
   // State for tab switching
@@ -42,7 +43,7 @@ const Admin = () => {
   // State for QR generation status
   const [qrGenerationStatus, setQrGenerationStatus] = useState({});
   const [isQrGenerating, setIsQrGenerating] = useState(false);
-
+  const [isSyncing, setIsSyncing] = useState(false);
   // State for visible QR codes (lazy loading)
   const [visibleQRCodes, setVisibleQRCodes] = useState(new Set());
 
@@ -120,44 +121,9 @@ const Admin = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  // Handle SSO config changes
-  const handleSsoConfigChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setSsoConfig((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  // Save SSO configuration
-  const saveSsoConfiguration = () => {
-    setIsConfiguring(false);
-    // TODO: Implement actual SSO configuration save
-    console.log("SSO Configuration:", ssoConfig);
-  };
-
   // Handle search input change
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-  };
-
-  // Get QR generation status icon
-  const getQrStatusIcon = (userId) => {
-    const status = qrGenerationStatus[userId];
-    if (!status) return null;
-
-    switch (status.status) {
-      case "generating":
-        return <FaSpinner className="w-3 h-3 text-blue-500 animate-spin" />;
-      case "completed":
-        return <FaCheck className="w-3 h-3 text-green-500" />;
-      case "error":
-        return <FaExclamationTriangle className="w-3 h-3 text-red-500" />;
-      case "skipped":
-        return <FaExclamationTriangle className="w-3 h-3 text-yellow-500" />;
-      default:
-        return null;
-    }
   };
 
   // Handle opening the popup
@@ -170,8 +136,19 @@ const Admin = () => {
     setIsPopupOpen(false);
     setSelectedActivity(null);
   };
-
-
+  const syncUsers = async () => {
+    try {
+      setIsSyncing(true);
+      const response = await autoSyncUsers();
+      console.log(response);
+      toast.success("Users synced successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sync users");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Show loading state
   if (isLoading) {
@@ -193,11 +170,25 @@ const Admin = () => {
 
   return (
     <div className="space-y-8 bg-white min-h-screen p-6">
-      <div className="mb-5 text-left">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">
-          Manage users and configure system settings
-        </p>
+      <div className="mb-5 text-left flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">
+            Manage users and configure system settings
+          </p>
+        </div>
+        <button
+          className="bg-primary-500 text-white px-4 py-2 rounded-md flex items-center"
+          onClick={() => syncUsers()}
+          disabled={isSyncing}
+        >
+          {isSyncing ? (
+            <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <FaSync className="w-4 h-4 mr-2" />
+          )}
+          Sync Users
+        </button>
       </div>
 
       {/* Tabs */}
@@ -348,7 +339,11 @@ const Admin = () => {
                       <td className="px-4 py-3 text-sm text-gray-500 text-left">
                         {user.shareId && user.shareId !== "" ? (
                           <div className="flex items-center space-x-2">
-                           <img src={user.qrCode?.dataUrl} alt="QR Code" style={{width: "40px", height: "40px"}} />
+                            <img
+                              src={user.qrCode?.dataUrl}
+                              alt="QR Code"
+                              style={{ width: "40px", height: "40px" }}
+                            />
                             <button
                               onClick={() => downloadQRBackEnd(user.shareId)}
                               className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -395,8 +390,6 @@ const Admin = () => {
           </div>
         </Card>
       )}
-
-   
 
       {/* Activity View Popup */}
       <ActivityViewPopup

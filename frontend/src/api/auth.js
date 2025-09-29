@@ -117,3 +117,16 @@ export const logout = async () => {
     return { success: false, message: "Logout API call failed" };
   }
 };
+
+// Sync users
+export const autoSyncUsers = async () => {
+  try {
+    const response = await api.post("/auth/sync/users");
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to sync users";
+    toast.error(errorMessage);
+    throw error;
+  }
+};

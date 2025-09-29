@@ -25,6 +25,8 @@ import {
 } from "../hooks/useShare";
 import { downloadVCard,  trackDownload } from "../api/share";
 import { generateBusinessCardPDFSeparatePages } from "../utils/pdfGenerator";
+import { FaMobileAlt } from "react-icons/fa";
+import { TbDeviceLandlinePhone } from "react-icons/tb";
 
 const ShareView = () => {
   const navigate = useNavigate();
@@ -48,6 +50,7 @@ const ShareView = () => {
         },
       });
     }
+    console.log("profileData", profileData);
   }, [profileData]);
 
   const profile = profileData?.profile;
@@ -367,10 +370,16 @@ const ShareView = () => {
                 )}
                 {profile.phone && (
                   <div className="flex items-center text-sm">
-                    <Phone size={16} className="mr-3 text-gray-600" />
+                    <FaMobileAlt size={16} className="mr-3 text-gray-600" />
                     <span className="text-gray-700">{profile.phone}</span>
                   </div>
                 )}
+                {/* {profile.businessPhones && (
+                  <div className="flex items-center text-sm">
+                    <TbDeviceLandlinePhone size={16} className="mr-3 text-gray-600" />
+                    <span className="text-gray-700">{profile.businessPhones[0]}</span>
+                  </div>
+                )} */}
                 {profile.address && (
                   <div className="flex items-start text-sm">
                     <MapPin
@@ -450,7 +459,7 @@ const ShareView = () => {
                     title: profile.jobTitle,
                     email: profile.email,
                     phone: profile.phone,
-                    phone2: profile.phone2,
+                    phone2: profile.businessPhones,
                     address: profile.address,
                   }}
                   qrCodeData={window.location.href}

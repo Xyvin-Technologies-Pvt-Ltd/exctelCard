@@ -764,7 +764,7 @@ async function autoSyncUsers(req, res) {
         try {
           // Fetch full user details from Graph API
           const userResponse = await axios.get(
-            `https://graph.microsoft.com/v1.0/users/${principalId}?$select=id,displayName,mail,userPrincipalName,jobTitle,department,mobilePhone,businessPhones,accountEnabled`,
+            `https://graph.microsoft.com/v1.0/users/${principalId}?$select=id,displayName,mail,userPrincipalName,jobTitle,department,mobilePhone,businessPhones,streetAddress,city,country,postalCode,state,countryOrRegion`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -803,6 +803,11 @@ async function autoSyncUsers(req, res) {
               name: graphUser.displayName || "Unknown User",
               jobTitle: graphUser.jobTitle || "",
               department: graphUser.department || "",
+              address: graphUser.streetAddress || "",
+              city: graphUser.city || "",
+              state: graphUser.state || "",
+              country: graphUser.countryOrRegion || "",
+              postalCode: graphUser.postalCode || "",
               phone: graphUser.mobilePhone || null,
               businessPhones: graphUser.businessPhones || [],
               isActive: graphUser.accountEnabled !== false,
@@ -848,6 +853,21 @@ async function autoSyncUsers(req, res) {
             }
             if (existingUser.phone !== graphUser.mobilePhone) {
               updatedFields.phone = graphUser.mobilePhone;
+            }
+            if (existingUser.address !== graphUser.streetAddress) {
+              updatedFields.address = graphUser.streetAddress;
+            }
+            if (existingUser.city !== graphUser.city) {
+              updatedFields.city = graphUser.city;
+            }
+            if (existingUser.state !== graphUser.state) {
+              updatedFields.state = graphUser.state;
+            }
+            if (existingUser.country !== graphUser.countryOrRegion) {
+              updatedFields.country = graphUser.countryOrRegion;
+            }
+            if (existingUser.postalCode !== graphUser.postalCode) {
+              updatedFields.postalCode = graphUser.postalCode;
             }
             if (JSON.stringify(existingUser.businessPhones) !== JSON.stringify(graphUser.businessPhones || [])) {
               updatedFields.businessPhones = graphUser.businessPhones || [];

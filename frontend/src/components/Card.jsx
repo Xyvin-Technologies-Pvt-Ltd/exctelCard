@@ -5,6 +5,7 @@ import "../styles/CardFlip.css";
 import { BsMicrosoftTeams } from "react-icons/bs";
 import { RiWhatsappFill } from "react-icons/ri";
 import { FaMobileAlt } from "react-icons/fa";
+import { TbDeviceLandlinePhone } from "react-icons/tb";
 
 const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
   // Use initialFlipState prop to set initial state
@@ -69,7 +70,8 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
               </div>
               {user?.phone2 && (
                 <div className="flex items-center text-xs md:text-sm text-gray-700 font-aktiv-bold">
-                  <Phone
+                 <div className="w-5 h-2"></div>
+                  <TbDeviceLandlinePhone
                     size={12}
                     className="mr-2 text-gray-600 flex-shrink-0"
                   />
@@ -82,10 +84,10 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
                   size={12}
                   className="mr-2 text-gray-600 flex-shrink-0 mt-0.5"
                 />
-                <span className="whitespace-pre-line">
+                <div className="whitespace-pre-line max-w-sm text-left pr-2">
                   {user?.address ||
                     "3791 Jalan Bukit Merah\n#06-14 E-Centre @ Redhill\nSingapore 159471"}
-                </span>
+                </div>
               </div>
               <div className="flex items-center text-xs md:text-sm pt-4 text-gray-700 font-aktiv-bold">
                 <div className="w-5 h-2"></div>

@@ -35,7 +35,12 @@ exports.getSharedProfile = async (req, res) => {
         department: user.department,
         jobTitle: user.jobTitle,
         phone: user.phone,
-        linkedIn: user.linkedIn,
+        address: user.address,
+        businessPhones: user.businessPhones[0]||null,
+        phone: user.phone,  city: user.city,
+        state: user.state,
+        country: user.country,
+        postalCode: user.postalCode,
         profileImage: user.profileImage,
         shareId: user.shareId,
         // Don't expose sensitive data like userId, internal IDs, etc.
