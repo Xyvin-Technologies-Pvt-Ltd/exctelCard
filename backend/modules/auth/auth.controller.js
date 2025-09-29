@@ -1,5 +1,6 @@
 const { ConfidentialClientApplication } = require("@azure/msal-node");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 
 const {
   azureConfig,
@@ -11,6 +12,7 @@ const User = require("../users/user.model");
 const UserActivity = require("../users/userActivity.model");
 const bcrypt = require("bcrypt");
 const qrCodeService = require("../../services/qrCodeService");
+const errorHandler = require("../../services/errorHandler");
 
 // Initialize MSAL instance
 const msalInstance = new ConfidentialClientApplication(azureConfig);
@@ -256,7 +258,10 @@ const handleCallback = async (req, res) => {
         accessToken: azureUserInfo.accessToken, // Include access token for Graph API calls
       },
       process.env.JWT_SECRET || "your-jwt-secret",
-      { expiresIn: "1h" } // Reduced expiry since we're including the access token
+      {
+        expiresIn: "1h", // Reduced expiry since we're including the access token
+        algorithm: "HS256",
+      }
     );
 
     // Store user session (replace with database in production)
@@ -306,7 +311,6 @@ const getProfile = async (req, res) => {
         email: req.user.email,
         name: req.user.name,
         tenantId: req.user.tenantId,
-        
       },
     });
   } catch (error) {
@@ -368,7 +372,8 @@ const verifyToken = async (req, res) => {
     const jwt = require("jsonwebtoken");
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "your-jwt-secret"
+      process.env.JWT_SECRET || "your-jwt-secret",
+      { algorithms: ["HS256"] }
     );
 
     res.json({
@@ -384,37 +389,6 @@ const verifyToken = async (req, res) => {
       error: error.message,
     });
   }
-};
-
-/**
- * Debug endpoint to show active sessions (development only)
- */
-const debugSessions = async (req, res) => {
-  if (process.env.NODE_ENV !== "development") {
-    return res.status(404).json({ message: "Not found" });
-  }
-
-  const sessions = [];
-  for (const [state, data] of authSessions.entries()) {
-    sessions.push({
-      state: state.substring(0, 8) + "...",
-      timestamp: new Date(data.timestamp).toISOString(),
-      age: Math.round((Date.now() - data.timestamp) / 1000) + "s",
-      sessionId: data.sessionId?.substring(0, 8) + "..." || "none",
-    });
-  }
-
-  res.json({
-    success: true,
-    message: "Active authentication sessions",
-    data: {
-      totalSessions: authSessions.size,
-      sessions: sessions,
-      nodeEnv: process.env.NODE_ENV,
-      redirectUri: redirectUri,
-      timestamp: new Date().toISOString(),
-    },
-  });
 };
 
 /**
@@ -476,7 +450,10 @@ const adminLogin = async (req, res) => {
         loginType: adminUser.loginType,
       },
       process.env.JWT_SECRET || "your-jwt-secret",
-      { expiresIn: "8h" } // Shorter expiry for admin sessions
+      {
+        expiresIn: "8h", // Shorter expiry for admin sessions
+        algorithm: "HS256",
+      }
     );
 
     console.log("✅ Admin JWT token generated");
@@ -505,12 +482,538 @@ const adminLogin = async (req, res) => {
   }
 };
 
+/**
+ * Get access token for Microsoft Graph API using client credentials
+ */
+const getGraphAccessToken = async () => {
+  try {
+    console.log("🔑 Requesting Graph API access token...");
+
+    // Validate Azure configuration
+    if (
+      !process.env.AZURE_CLIENT_ID ||
+      !process.env.AZURE_CLIENT_SECRET ||
+      !process.env.AZURE_TENANT_ID
+    ) {
+      throw new Error(
+        "Azure configuration missing. Please check AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID environment variables."
+      );
+    }
+
+    const tokenRequest = {
+      scopes: ["https://graph.microsoft.com/.default"],
+    };
+
+    console.log("📋 Token request details:", {
+      clientId: process.env.AZURE_CLIENT_ID ? "Present" : "Missing",
+      clientSecret: process.env.AZURE_CLIENT_SECRET ? "Present" : "Missing",
+      tenantId: process.env.AZURE_TENANT_ID ? "Present" : "Missing",
+      scopes: tokenRequest.scopes,
+    });
+
+    const response = await msalInstance.acquireTokenByClientCredential(
+      tokenRequest
+    );
+
+    console.log("✅ Graph API access token obtained successfully");
+    return response.accessToken;
+  } catch (error) {
+    console.error("❌ Error getting Graph access token:", error);
+
+    // Log detailed error information
+    await errorHandler.logError(error, {
+      action: "get_graph_access_token",
+      source: "auto_sync",
+      userId: null,
+    });
+
+    throw error;
+  }
+};
+
+/**
+ * Fetch users from Microsoft Graph API
+ */
+const fetchUsersFromGraph = async (accessToken, skipToken = null) => {
+  try {
+    // Service Principal ID from Azure Portal (Enterprise App → Overview → Object ID)
+    const servicePrincipalId = process.env.SERVICE_PRINCIPAL_ID;
+
+    const baseUrl = `https://graph.microsoft.com/v1.0/servicePrincipals/${servicePrincipalId}/appRoleAssignedTo`;
+    const params = new URLSearchParams({
+      $top: "999",
+      $expand: "principal", // expand to get user details
+    });
+
+    if (skipToken) {
+      params.append("$skiptoken", skipToken);
+    }
+
+    const url = `${baseUrl}?${params}`;
+    console.log("🌐 Fetching assigned users from Graph API:", url);
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const assignments = response.data.value || [];
+
+    // Extract only users (filter out groups/service principals)
+    const users = assignments
+      .filter((a) => a.principal["@odata.type"] === "#microsoft.graph.user")
+      .map((a) => ({
+        id: a.principal.id,
+        displayName: a.principal.displayName,
+        email: a.principal.mail || a.principal.userPrincipalName,
+        jobTitle: a.principal.jobTitle,
+        department: a.principal.department,
+      }));
+
+    return {
+      users,
+      nextLink: response.data["@odata.nextLink"] || null,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching assigned users:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    });
+
+    throw error;
+  }
+};
+
+/**
+ * Sync user data from Microsoft Graph to local database
+ */
+const syncUserFromGraph = async (graphUser, tenantId) => {
+  try {
+    const email = graphUser.mail || graphUser.userPrincipalName;
+
+    if (!email) {
+      console.warn("⚠️ Skipping user without email:", graphUser.id);
+      return null;
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({
+      $or: [{ email: email.toLowerCase() }, { entraId: graphUser.id }],
+    });
+
+    const userData = {
+      entraId: graphUser.id,
+      email: email.toLowerCase(),
+      name: graphUser.displayName || "Unknown User",
+      department: graphUser.department || null,
+      jobTitle: graphUser.jobTitle || null,
+      tenantId: tenantId,
+      businessPhones: graphUser.businessPhones || [],
+      phone: graphUser.mobilePhone || null,
+      isActive: graphUser.accountEnabled !== false,
+      isEmailVerified: true,
+      loginType: "sso",
+      createdBy: "auto_sync",
+    };
+
+    if (user) {
+      // Update existing user
+      console.log(`🔄 Updating existing user: ${email}`);
+
+      // Only update certain fields, preserve user customizations
+      const updateFields = {
+        name: userData.name,
+        department: userData.department,
+        jobTitle: userData.jobTitle,
+        businessPhones: userData.businessPhones,
+        phone: userData.phone,
+        isActive: userData.isActive,
+        lastActiveAt: new Date(),
+      };
+
+      // Only update if values have changed
+      const hasChanges = Object.keys(updateFields).some((key) => {
+        if (Array.isArray(updateFields[key])) {
+          return (
+            JSON.stringify(updateFields[key]) !== JSON.stringify(user[key])
+          );
+        }
+        return updateFields[key] !== user[key];
+      });
+
+      if (hasChanges) {
+        await User.findByIdAndUpdate(user._id, updateFields);
+        console.log(`✅ Updated user: ${email}`);
+      } else {
+        console.log(`⏭️ No changes for user: ${email}`);
+      }
+
+      return { action: "updated", user: user._id, email };
+    } else {
+      // Create new user
+      console.log(`🆕 Creating new user: ${email}`);
+
+      const newUser = new User(userData);
+      await newUser.save();
+
+      // Generate QR code for new user
+      try {
+        if (newUser.shareId) {
+          await qrCodeService.generateAndSaveQRCode(newUser, FRONTEND_URL, {
+            size: 200,
+            logoSize: 45,
+          });
+          console.log(`✅ QR code generated for new user: ${email}`);
+        }
+      } catch (qrError) {
+        console.error(
+          `❌ Error generating QR code for ${email}:`,
+          qrError.message
+        );
+      }
+
+      return { action: "created", user: newUser._id, email };
+    }
+  } catch (error) {
+    console.error(`❌ Error syncing user ${graphUser.id}:`, error);
+    return {
+      action: "error",
+      user: null,
+      email: graphUser.mail || graphUser.userPrincipalName,
+      error: error.message,
+    };
+  }
+};
+
+/**
+ * Auto-sync ONLY users assigned to the Enterprise Application
+ * Fetches users from "Users and groups" section of your Enterprise App
+ */
+async function autoSyncUsers(req, res) {
+  let token;
+  
+  try {
+    token = await getGraphAccessToken();
+  } catch (tokenError) {
+    console.error("❌ Failed to get access token:", tokenError.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to authenticate with Microsoft Graph API",
+      error: tokenError.message,
+    });
+  }
+
+  const userId = req.user?.userId;
+
+  // Validate Service Principal ID is configured
+  if (!process.env.SERVICE_PRINCIPAL_ID) {
+    console.error("❌ SERVICE_PRINCIPAL_ID not configured");
+    return res.status(500).json({
+      success: false,
+      message: "SERVICE_PRINCIPAL_ID environment variable is missing. Get it from Azure Portal → Enterprise Applications → Your App → Overview → Object ID",
+    });
+  }
+
+  // THIS IS THE KEY: Use appRoleAssignedTo to get ONLY assigned users
+  let url = `https://graph.microsoft.com/v1.0/servicePrincipals/${process.env.SERVICE_PRINCIPAL_ID}/appRoleAssignedTo?$top=999`;
+
+  const processedAzureIds = new Set();
+  const stats = { 
+    created: 0, 
+    updated: 0, 
+    deleted: 0, 
+    errors: 0,
+    skipped: 0,
+    totalAssignments: 0
+  };
+
+  try {
+    console.log("🔄 Starting auto-sync for Enterprise App assigned users...");
+    console.log(`🎯 Service Principal ID: ${process.env.SERVICE_PRINCIPAL_ID}`);
+
+    // Pagination loop - fetch all assigned users
+    while (url) {
+      console.log(`📡 Fetching assignments: ${url}`);
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const assignments = response.data.value || [];
+      stats.totalAssignments += assignments.length;
+      console.log(`📦 Retrieved ${assignments.length} assignments`);
+
+      for (const assignment of assignments) {
+        // Only process User principals (skip Groups and ServicePrincipals)
+        if (assignment.principalType !== "User") {
+          console.log(`⏭️ Skipping ${assignment.principalType}: ${assignment.principalDisplayName}`);
+          stats.skipped++;
+          continue;
+        }
+
+        const principalId = assignment.principalId;
+        console.log(`👤 Processing user: ${assignment.principalDisplayName}`);
+
+        try {
+          // Fetch full user details from Graph API
+          const userResponse = await axios.get(
+            `https://graph.microsoft.com/v1.0/users/${principalId}?$select=id,displayName,mail,userPrincipalName,jobTitle,department,mobilePhone,businessPhones,accountEnabled`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const graphUser = userResponse.data;
+          const userEmail = graphUser.mail || graphUser.userPrincipalName;
+
+          if (!userEmail) {
+            console.warn(`⚠️ User ${principalId} has no email, skipping`);
+            stats.skipped++;
+            continue;
+          }
+
+          console.log(`📧 Email: ${userEmail} , Entra ID: ${principalId}`);
+          processedAzureIds.add(principalId);
+
+          // Check if user exists in database
+          let existingUser = await User.findOne({
+            $or: [
+              { entraId: principalId },
+              { email: userEmail.toLowerCase() }
+            ]
+          });
+
+          if (!existingUser) {
+            // Create new user
+            console.log(`🆕 Creating new user: ${userEmail}`);
+
+            const newUser = await User.create({
+              entraId: principalId,
+              email: userEmail.toLowerCase(),
+              name: graphUser.displayName || "Unknown User",
+              jobTitle: graphUser.jobTitle || "",
+              department: graphUser.department || "",
+              phone: graphUser.mobilePhone || null,
+              businessPhones: graphUser.businessPhones || [],
+              isActive: graphUser.accountEnabled !== false,
+              isEmailVerified: true,
+              loginType: "sso",
+              createdBy: "auto_sync",
+              tenantId: process.env.AZURE_TENANT_ID,
+              lastActiveAt: new Date(),
+            });
+
+            // Generate QR code for new user (if applicable)
+            try {
+              if (newUser.shareId && typeof qrCodeService !== 'undefined') {
+                await qrCodeService.generateAndSaveQRCode(
+                  newUser,
+                  process.env.FRONTEND_URL || "http://localhost:5173",
+                  { size: 200, logoSize: 45 }
+                );
+                console.log(`✅ QR code generated for: ${userEmail}`);
+              }
+            } catch (qrError) {
+              console.error(`⚠️ QR generation failed for ${userEmail}:`, qrError.message);
+            }
+
+            stats.created++;
+            console.log(`✅ Created user: ${userEmail}`);
+
+          } else {
+            // Update existing user
+            const updatedFields = {};
+
+            if (existingUser.name !== graphUser.displayName) {
+              updatedFields.name = graphUser.displayName;
+            }
+            if (existingUser.email !== userEmail.toLowerCase()) {
+              updatedFields.email = userEmail.toLowerCase();
+            }
+            if (existingUser.jobTitle !== (graphUser.jobTitle || "")) {
+              updatedFields.jobTitle = graphUser.jobTitle || "";
+            }
+            if (existingUser.department !== (graphUser.department || "")) {
+              updatedFields.department = graphUser.department || "";
+            }
+            if (existingUser.phone !== graphUser.mobilePhone) {
+              updatedFields.phone = graphUser.mobilePhone;
+            }
+            if (JSON.stringify(existingUser.businessPhones) !== JSON.stringify(graphUser.businessPhones || [])) {
+              updatedFields.businessPhones = graphUser.businessPhones || [];
+            }
+
+            // Always update these fields
+            updatedFields.lastActiveAt = new Date();
+            updatedFields.isActive = graphUser.accountEnabled !== false;
+
+            if (Object.keys(updatedFields).length > 1) { // > 1 because lastActiveAt is always updated
+              await User.updateOne(
+                { _id: existingUser._id },
+                { $set: updatedFields }
+              );
+              stats.updated++;
+              console.log(`🔄 Updated user: ${userEmail}`);
+            } else {
+              console.log(`⏭️ No changes for: ${userEmail}`);
+            }
+          }
+
+        } catch (userError) {
+          console.error(`❌ Error processing user ${principalId}:`, userError.message);
+          if (userError.response) {
+            console.error(`   Status: ${userError.response.status}`);
+            console.error(`   Data:`, userError.response.data);
+          }
+          stats.errors++;
+        }
+      }
+
+      // Get next page URL for pagination
+      url = response.data["@odata.nextLink"] || null;
+    }
+
+    // 🗑️ Delete users who are no longer assigned to the app
+    console.log("🧹 Cleaning up unassigned users...");
+    const deleteResult = await User.deleteMany({
+      entraId: { $exists: true, $nin: Array.from(processedAzureIds) },
+      loginType: "sso",
+    });
+
+    stats.deleted = deleteResult.deletedCount;
+    console.log(`🗑️ Deleted ${stats.deleted} unassigned users`);
+
+    // Record sync activity
+    await UserActivity.create({
+      action: "auto_sync",
+      userId: userId,
+      activityType: "admin_action",
+      metadata: {
+        action: "auto_sync_users",
+        summary: "Auto sync users assigned to Enterprise Application",
+        stats: stats,
+      },
+      status: "success",
+      details: JSON.stringify(stats),
+    });
+
+    console.log("✅ Auto sync complete:", stats);
+    return res.json({
+      success: true,
+      message: "Auto sync completed successfully",
+      data: {
+        created: stats.created,
+        updated: stats.updated,
+        deleted: stats.deleted,
+        errors: stats.errors,
+        skipped: stats.skipped,
+        totalAssignments: stats.totalAssignments,
+        totalUsersProcessed: processedAzureIds.size
+      },
+    });
+
+  } catch (err) {
+    console.error("❌ Auto sync failed:", err.message);
+    console.error("Stack trace:", err.stack);
+
+    if (err.response) {
+      console.error("API Response:", {
+        status: err.response.status,
+        statusText: err.response.statusText,
+        data: err.response.data
+      });
+    }
+
+    // Record failed sync activity
+    await UserActivity.create({
+      action: "auto_sync",
+      userId: userId,
+      activityType: "admin_action",
+      metadata: {
+        action: "auto_sync_users",
+        summary: "Auto sync users from Enterprise Application",
+        stats: stats,
+      },
+      status: "failed",
+      details: err.message,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: "Auto sync failed",
+      error: err.message,
+      partialStats: stats
+    });
+  }
+}
+
+
+/**
+ * Get sync status and statistics
+ */
+const getSyncStatus = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({ isActive: true });
+    const ssoUsers = await User.countDocuments({
+      isActive: true,
+      loginType: "sso",
+    });
+    const passwordUsers = await User.countDocuments({
+      isActive: true,
+      loginType: "password",
+    });
+    const recentSyncs = await UserActivity.find({
+      activityType: "admin_action",
+      "metadata.action": "auto_sync_users",
+    })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select("createdAt metadata");
+
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        ssoUsers,
+        passwordUsers,
+        recentSyncs: recentSyncs.map((sync) => ({
+          timestamp: sync.createdAt,
+          summary: sync.metadata?.summary,
+          success: !sync.metadata?.error,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error getting sync status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get sync status",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   initiateLogin,
   handleCallback,
   getProfile,
   logout,
   verifyToken,
-  debugSessions,
+
   adminLogin,
+  autoSyncUsers,
+  getSyncStatus,
+  getGraphAccessToken,
+  fetchUsersFromGraph,
+  syncUserFromGraph,
 };

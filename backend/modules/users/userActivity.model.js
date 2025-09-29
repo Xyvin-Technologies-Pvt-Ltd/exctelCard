@@ -18,7 +18,7 @@ const userActivitySchema = new mongoose.Schema(
         "bizcardDownloads", // Contact was saved to phone
         "website_view", // Profile was shared
         "vcardDownloads", // vCard was downloaded 
-       
+       "admin_action"
       ],
       required: true,
       index: true,

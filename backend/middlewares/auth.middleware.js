@@ -16,9 +16,10 @@ const authenticateToken = (req, res, next) => {
     jwt.verify(
       token,
       process.env.JWT_SECRET || "your-jwt-secret",
+      { algorithms: ["HS256"] },
       (err, user) => {
         if (err) {
-          console.log(err)
+          console.log("JWT verification error:", err);
           return res.status(403).json({
             success: false,
             message: "Invalid or expired token",
@@ -26,6 +27,7 @@ const authenticateToken = (req, res, next) => {
         }
 
         req.user = user;
+        req.accessToken = token;
         next();
       }
     );
@@ -44,15 +46,12 @@ const authenticateToken = (req, res, next) => {
  */
 const requireAdmin = (req, res, next) => {
   try {
-
     if (!req.user) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
       });
     }
-
-
 
     // Check if user has admin role
     if (req.user.role === "admin" || req.user.role === "super_admin") {
@@ -97,6 +96,7 @@ const optionalAuth = (req, res, next) => {
       jwt.verify(
         token,
         process.env.JWT_SECRET || "your-jwt-secret",
+        { algorithms: ["HS256"] },
         (err, user) => {
           if (!err) {
             req.user = user;

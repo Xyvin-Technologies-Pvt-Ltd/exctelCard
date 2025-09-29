@@ -24,7 +24,7 @@ import {
   useTrackDownload,
 } from "../hooks/useShare";
 import { downloadVCard,  trackDownload } from "../api/share";
-import { generateBusinessCardPDF,generateBusinessCardPDFSeparatePages } from "../utils/pdfGenerator";
+import { generateBusinessCardPDFSeparatePages } from "../utils/pdfGenerator";
 
 const ShareView = () => {
   const navigate = useNavigate();

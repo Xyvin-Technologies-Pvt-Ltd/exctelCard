@@ -7,6 +7,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const connectDB = require("./config/database");
 const morgan = require("morgan");
+const autoSyncService = require("./services/autoSyncService");
 require("dotenv").config();
 
 // Connect to MongoDB
@@ -133,6 +134,16 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Auto-sync service status endpoint
+app.get("/sync/status", (req, res) => {
+  const syncStatus = autoSyncService.getStatus();
+  res.json({
+    success: true,
+    message: "Auto-sync service status",
+    data: syncStatus,
+  });
+});
+
 // Root endpoint
 app.get("/", (req, res) => {
   res.json({
@@ -169,6 +180,17 @@ app.listen(PORT, () => {
   console.log(`🚀 DigiCard API server running on port ${PORT}`);
   console.log(`📚 API Documentation: http://localhost:${PORT}/api/docs`);
   console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+
+  // Start auto-sync service if enabled
+  if (process.env.AUTO_SYNC_ENABLED === "true") {
+    const syncSchedule = process.env.AUTO_SYNC_SCHEDULE || "0 */6 * * *"; // Default: every 6 hours
+    autoSyncService.start(syncSchedule);
+    console.log(`🔄 Auto-sync service started with schedule: ${syncSchedule}`);
+  } else {
+    console.log(
+      "⏸️ Auto-sync service disabled (set AUTO_SYNC_ENABLED=true to enable)"
+    );
+  }
 });
 
 module.exports = app;

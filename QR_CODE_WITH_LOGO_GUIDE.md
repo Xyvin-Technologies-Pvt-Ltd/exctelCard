@@ -232,3 +232,6 @@ The system is now ready to generate professional QR codes with your company logo
 
 
 
+
+
+

@@ -5,6 +5,8 @@ import { BsMicrosoftTeams } from "react-icons/bs";
 import { RiWhatsappFill } from "react-icons/ri";
 import { FaMobileAlt } from "react-icons/fa";
 
+
+
 const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
   return (
     <div style={{ 
@@ -75,7 +77,7 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
             left: "16px"
           }}>
             <div style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               fontSize: "11px",
               color: "#374151",
@@ -83,15 +85,16 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
               marginBottom: "3px",
               fontFamily: "Arial, sans-serif",
               flexWrap: "nowrap",
+              whiteSpace: "nowrap",
               minHeight: "14px"
             }}>
-              <Mail size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
-              <BsMicrosoftTeams size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
+              <Mail size={10} style={{display: "inline-block", marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
+              <BsMicrosoftTeams size={10} style={{display: "inline-block", marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
               <span style={{ flexShrink: 0 }}>{user?.email || "nowshad.hameed@exctel.com"}</span>
             </div>
             
             <div style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               fontSize: "11px",
               color: "#374151",
@@ -99,16 +102,17 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
               marginBottom: "3px",
               fontFamily: "Arial, sans-serif",
               flexWrap: "nowrap",
+              whiteSpace: "nowrap",
               minHeight: "14px"
             }}>
-              <FaMobileAlt size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
-              <RiWhatsappFill size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
+              <FaMobileAlt size={10} style={{display: "inline-block", marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
+              <RiWhatsappFill size={10} style={{display: "inline-block", marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
               <span style={{ flexShrink: 0 }}>{user?.phone || "+65 9027 7225"}</span>
             </div>
             
             {user?.phone2 && (
               <div style={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 fontSize: "11px",
                 color: "#374151",
@@ -116,33 +120,35 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 marginBottom: "3px",
                 fontFamily: "Arial, sans-serif",
                 flexWrap: "nowrap",
+                whiteSpace: "nowrap",
                 minHeight: "14px"
               }}>
-                <Phone size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
+                <Phone size={10} style={{display: "inline-block", marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
                 <span style={{ flexShrink: 0 }}>{user.phone2}</span>
               </div>
             )}
             
             <div style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "flex-start",
               fontSize: "11px",
               color: "#374151",
               fontWeight: "bold",
               marginBottom: "3px",
               fontFamily: "Arial, sans-serif",
-              flexWrap: "nowrap"
+              flexWrap: "nowrap",
+              whiteSpace: "nowrap"
             }}>
               <div style={{ width: "12px", flexShrink: 0 }}></div>
-              <MapPin size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0, marginTop: "1px" }} />
+              <MapPin size={10} style={{display: "inline-block", marginRight: "4px", color: "#4B5563", flexShrink: 0, marginTop: "1px" }} />
               <span style={{ whiteSpace: "pre-line", flexShrink: 0 }}>
                 {user?.address ||
-                  "7791 Jalan Bukit Merah\n#06-14 E-Centre @ Redhill\nSingapore 159471"}
+                  "3791 Jalan Bukit Merah\n#06-14 E-Centre @ Redhill\nSingapore 159471"}
               </span>
             </div>
             
             <div style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               fontSize: "11px",
               paddingTop: "12px",
@@ -150,10 +156,11 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
               fontWeight: "bold",
               fontFamily: "Arial, sans-serif",
               flexWrap: "nowrap",
+              whiteSpace: "nowrap",
               minHeight: "14px"
             }}>
               <div style={{ width: "12px", flexShrink: 0 }}></div>
-              <Globe size={10} style={{ marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
+              <Globe size={10} style={{display: "inline-block",  marginRight: "4px", color: "#4B5563", flexShrink: 0 }} />
               <span style={{ flexShrink: 0 }}>www.exctel.com</span>
             </div>
           </div>
@@ -192,7 +199,8 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
           <div style={{
             backgroundColor: "rgba(255, 255, 255, 0.9)",
             padding: "6px",
-            border: "2px solid white"
+            border: "2px solid white",
+            whiteSpace: "nowrap"
           }}>
             <QRCodeWithLogo
               value={qrCodeData || "https://www.exctel.com"}

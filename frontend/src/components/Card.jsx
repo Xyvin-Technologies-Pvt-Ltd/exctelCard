@@ -84,7 +84,7 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
                 />
                 <span className="whitespace-pre-line">
                   {user?.address ||
-                    "7791 Jalan Bukit Merah\n#06-14 E-Centre @ Redhill\nSingapore 159471"}
+                    "3791 Jalan Bukit Merah\n#06-14 E-Centre @ Redhill\nSingapore 159471"}
                 </span>
               </div>
               <div className="flex items-center text-xs md:text-sm pt-4 text-gray-700 font-aktiv-bold">
