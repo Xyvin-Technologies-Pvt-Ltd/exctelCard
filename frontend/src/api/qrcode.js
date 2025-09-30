@@ -7,10 +7,11 @@ import toast from "react-hot-toast";
 export const downloadQRBackEnd = async (shareId) => {
   try {
     const response = await api.get(`/qrcode/share/${shareId}`) 
-    if(response.success){
+    console.log(response.data);
+    if(response.data.success){
       const link = document.createElement("a");
-      link.href = response.url;
-      link.download = "qr-code.png";
+      link.href = response.data.url;
+      link.download = `${response.data.user}-qr-code.png`;
       link.click();
     }
     toast.success("QR code generated successfully");

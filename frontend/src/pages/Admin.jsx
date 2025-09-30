@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -19,11 +20,15 @@ import { downloadQRBackEnd } from "../api/qrcode";
 import { autoSyncUsers } from "../api/auth";
 
 const Admin = () => {
+  // Query client for refetching
+  const queryClient = useQueryClient();
+
   // State for tab switching
   const [activeTab, setActiveTab] = useState("users");
   // State for SSO configuration
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [ssoConfig, setSsoConfig] = useState({
     provider: "microsoft",
     clientId: "",
@@ -47,14 +52,24 @@ const Admin = () => {
   // State for visible QR codes (lazy loading)
   const [visibleQRCodes, setVisibleQRCodes] = useState(new Set());
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Fetch users with TanStack Query
   const {
     data: usersData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["users", searchQuery],
-    queryFn: () => (searchQuery ? searchUsers(searchQuery) : getUsers()),
+    queryKey: ["users", debouncedSearchQuery],
+    queryFn: () =>
+      debouncedSearchQuery ? searchUsers(debouncedSearchQuery) : getUsers(),
   });
 
   // Fetch user activity when popup is opened
@@ -140,7 +155,10 @@ const Admin = () => {
     try {
       setIsSyncing(true);
       const response = await autoSyncUsers();
-      console.log(response);
+
+      // Refetch users data using TanStack Query
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+
       toast.success("Users synced successfully");
     } catch (error) {
       console.error(error);

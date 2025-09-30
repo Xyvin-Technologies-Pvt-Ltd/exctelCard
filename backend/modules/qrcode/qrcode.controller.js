@@ -14,8 +14,8 @@ exports.downloadQRCode = async (req, res) => {
       user,
       req.headers.referer,
       {
-        size: 400,
-        logoSize: 100,
+        size: 1000,
+        logoSize: 200,
       }
     );
 
@@ -30,7 +30,7 @@ exports.downloadQRCode = async (req, res) => {
         userAgent: req.get("User-Agent"),
       },
     });
-    return res.status(200).json({ success: true, message: "QR code generated successfully" ,url: qrCode.qrCode.dataUrl});
+    return res.status(200).json({ success: true,user:user.name, message: "QR code generated successfully" ,url: qrCode.qrCode.dataUrl});
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
