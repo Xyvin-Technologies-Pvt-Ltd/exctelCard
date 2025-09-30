@@ -119,7 +119,7 @@ class QRCodeService {
    * @returns {string} - Complete share URL
    */
   generateShareUrl(shareId, baseUrl) {
-    return `${baseUrl}/share/${shareId}`;
+    return `${baseUrl}share/${shareId}`;
   }
 
   /**
