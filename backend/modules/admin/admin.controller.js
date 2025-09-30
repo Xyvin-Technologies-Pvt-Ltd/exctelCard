@@ -75,7 +75,7 @@ const getUsers = async (req, res) => {
         .select(
           "email shareId name jobTitle qrCode department profileImage phone lastActiveAt _id"
         )
-        .sort({ lastActiveAt: -1 })
+        .sort({ name: 1 })
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .lean(), // Use lean() for better performance
