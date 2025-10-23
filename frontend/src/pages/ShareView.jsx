@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Building,
   MapPin,
- 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
@@ -23,7 +22,7 @@ import {
   useTrackWebsiteView,
   useTrackDownload,
 } from "../hooks/useShare";
-import { downloadVCard,  trackDownload } from "../api/share";
+import { downloadVCard, trackDownload } from "../api/share";
 import { generateBusinessCardPDFSeparatePages } from "../utils/pdfGenerator";
 import { FaMobileAlt } from "react-icons/fa";
 import { TbDeviceLandlinePhone } from "react-icons/tb";
@@ -66,8 +65,8 @@ const ShareView = () => {
         shareId: profile.shareId,
         downloadType: type,
         metadata: {
-        action: `download_${type}`,
-        timestamp: new Date().toISOString(),
+          action: `download_${type}`,
+          timestamp: new Date().toISOString(),
         },
       });
     }
