@@ -199,6 +199,13 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    // User preferences
+    preferences: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+      // Stores user preferences like outlook_signature_auto_insert, etc.
+    },
+
     // Metadata
     createdBy: {
       type: String, // 'sso', 'admin', 'self-registration'

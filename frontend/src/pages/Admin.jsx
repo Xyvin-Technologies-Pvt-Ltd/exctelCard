@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import ActivityViewPopup from "../components/ActivityViewPopup";
 import QRCodeWithLogo from "../components/QRCodeWithLogo";
+import AdminSignatureManager from "../components/admin/AdminSignatureManager";
 import { getUsers, getUserActivity, searchUsers } from "../api/users";
 import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
 import { downloadQRBackEnd } from "../api/qrcode";
@@ -222,6 +223,16 @@ const Admin = () => {
           >
             User Management
           </button>
+          <button
+            onClick={() => setActiveTab("signatures")}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "signatures"
+                ? "border-gray-900 text-gray-900"
+                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            Outlook Signatures
+          </button>
         </nav>
       </div>
 
@@ -407,6 +418,11 @@ const Admin = () => {
             </table>
           </div>
         </Card>
+      )}
+
+      {/* Outlook Signatures Tab */}
+      {activeTab === "signatures" && (
+        <AdminSignatureManager />
       )}
 
       {/* Activity View Popup */}

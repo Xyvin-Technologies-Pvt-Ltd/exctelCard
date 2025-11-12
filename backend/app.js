@@ -22,6 +22,7 @@ const activityRoutes = require("./modules/users/activity.route");
 const profileRoutes = require("./modules/profile/profile.route");
 const shareRoutes = require("./modules/share/share.route");
 const qrcodeRoutes = require("./modules/qrcode/qrcode.route");
+const outlookSignatureRoutes = require("./modules/outlook-signature/outlook-signature.route");
 
 // Middleware
 app.use(
@@ -123,6 +124,7 @@ app.use("/api/activities", activityRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/qrcode", qrcodeRoutes);
+app.use("/api/outlook-signature", outlookSignatureRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

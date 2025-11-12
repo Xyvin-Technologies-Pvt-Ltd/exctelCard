@@ -18,4 +18,10 @@ router.post("/share-id", profileController.generateShareId);
 // Sync profile with SSO data
 router.post("/sync", profileController.syncProfile);
 
+// Get user preferences
+router.get("/preferences", profileController.getPreferences);
+
+// Update user preferences
+router.put("/preferences", profileController.updatePreferences);
+
 module.exports = router;

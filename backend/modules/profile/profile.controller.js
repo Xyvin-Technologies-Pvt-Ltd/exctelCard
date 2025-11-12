@@ -257,3 +257,69 @@ exports.syncProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get user preferences
+ */
+exports.getPreferences = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = await User.findOne({ email: userEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user.preferences || {},
+    });
+  } catch (error) {
+    console.error("Error getting preferences:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error getting preferences",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Update user preferences
+ */
+exports.updatePreferences = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const preferences = req.body;
+
+    const user = await User.findOne({ email: userEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Merge preferences
+    user.preferences = { ...(user.preferences || {}), ...preferences };
+    user.lastActiveAt = new Date();
+    await user.save();
+
+    res.json({
+      success: true,
+      data: user.preferences || {},
+      message: "Preferences updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating preferences:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating preferences",
+      error: error.message,
+    });
+  }
+};

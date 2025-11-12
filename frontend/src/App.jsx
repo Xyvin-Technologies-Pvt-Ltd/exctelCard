@@ -14,6 +14,7 @@ import "./App.css";
 import Activity from "./pages/Activity";
 import Admin from "./pages/Admin";
 import ShareView from "./pages/ShareView";
+import SignatureManager from "./pages/SignatureManager";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ToastProvider from "./components/ToastProvider";
 import { useAuthStore } from "./store/authStore";
@@ -125,6 +126,7 @@ function App() {
                       <Route path="/activity" element={<Activity />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/qrcode" element={<QRCode />} />
+                      <Route path="/outlook-signature" element={<SignatureManager />} />
                     </Routes>
                   </Layout>
                 </ProtectedRoute>

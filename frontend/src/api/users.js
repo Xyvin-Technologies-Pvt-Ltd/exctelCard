@@ -36,3 +36,38 @@ export const searchUsers = async (query) => {
     throw error;
   }
 };
+
+/**
+ * Get user preferences
+ */
+export const getUserPreferences = async () => {
+  try {
+    const response = await api.get("/profile/preferences");
+    return response.data;
+  } catch (error) {
+    // If endpoint doesn't exist, return empty preferences
+    if (error.response?.status === 404) {
+      return { success: true, data: {} };
+    }
+    const errorMessage =
+      error.response?.data?.message || "Failed to fetch user preferences";
+    console.warn(errorMessage);
+    return { success: true, data: {} };
+  }
+};
+
+/**
+ * Update user preferences
+ */
+export const updateUserPreferences = async (preferences) => {
+  try {
+    const response = await api.put("/profile/preferences", preferences);
+    toast.success("Preferences updated successfully");
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to update preferences";
+    toast.error(errorMessage);
+    throw error;
+  }
+};
