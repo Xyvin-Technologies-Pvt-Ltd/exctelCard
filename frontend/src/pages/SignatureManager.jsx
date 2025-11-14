@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { RefreshCw, Loader2, AlertCircle } from "lucide-react";
-import SidebarLayout from "../components/SidebarLayout";
 import SignaturePreview from "../components/outlook/SignaturePreview";
 import { generatePreview } from "../api/outlook-signature.api";
 import { useAuthStore } from "../store/authStore";
@@ -47,6 +47,7 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html><html><head><meta charset="UTF-8"><styl
     </body></html>`;
 
 const SignatureManager = () => {
+  const navigate = useNavigate();
   const { token: accessToken, user: authUser } = useAuthStore();
   const { data: profileData } = useProfile();
   const [userProfile, setUserProfile] = useState(null);
@@ -284,65 +285,82 @@ const SignatureManager = () => {
   };
 
   return (
-    <SidebarLayout
-      backPath="/profile"
-      backLabel="Back to Profile"
-      initialCategory="outlook"
-    >
-      <div className="min-h-screen bg-gray-50">
-        <div className="w-full mx-auto mt-6 mb-6 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Header */}
-          <div className="px-6 py-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Outlook Signature Preview</h1>
-                <p className="text-slate-600 mt-1">
-                  Your personalized email signature preview
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleRefresh}
-                  disabled={isLoading || previewMutation.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isLoading || previewMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  Refresh
-                </button>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Back Button */}
+      <div className="mb-4">
+        <button
+          onClick={() => navigate("/profile")}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back to Profile
+        </button>
+      </div>
+
+      <div className="w-full mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-6 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Outlook Signature Preview</h1>
+              <p className="text-slate-600 mt-1">
+                Your personalized email signature preview
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading || previewMutation.isPending}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isLoading || previewMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Refresh
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                <span className="font-medium">{error}</span>
-              </div>
+        {/* Error Message */}
+        {error && (
+          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              <span className="font-medium">{error}</span>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Preview Section */}
-          <div className="px-6 py-6">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-6">
-                <SignaturePreview 
-                  html={previewHtml} 
-                  isLoading={isLoading || previewMutation.isPending} 
-                  onCopy={previewHtml ? copySignatureToClipboard : undefined}
-                  copyState={copyState}
-                />
-              </div>
+        {/* Preview Section */}
+        <div className="px-6 py-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-6">
+              <SignaturePreview 
+                html={previewHtml} 
+                isLoading={isLoading || previewMutation.isPending} 
+                onCopy={previewHtml ? copySignatureToClipboard : undefined}
+                copyState={copyState}
+              />
             </div>
           </div>
         </div>
       </div>
-    </SidebarLayout>
+    </div>
   );
 };
 
