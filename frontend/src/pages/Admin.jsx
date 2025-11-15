@@ -19,6 +19,7 @@ import { getUsers, getUserActivity, searchUsers } from "../api/users";
 import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
 import { downloadQRBackEnd } from "../api/qrcode";
 import { autoSyncUsers } from "../api/auth";
+import { getAllConfigsAdmin, createConfigAdmin } from "../api/outlook-signature.api";
 
 const Admin = () => {
   // Query client for refetching
@@ -152,15 +153,92 @@ const Admin = () => {
     setIsPopupOpen(false);
     setSelectedActivity(null);
   };
+  // Default HTML template - Outlook compatible with inline styles
+  const DEFAULT_TEMPLATE = `<!--[if mso]>
+<style type="text/css">
+@font-face{font-family:"AktivGrotesk";src:url("https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/static/source/rev-0cb01a5/betasite.exctel.com/wp-content/uploads/2025/03/AktivGrotesk-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
+body, table, td, a { font-family: "AktivGrotesk", Arial, sans-serif !important; }
+</style>
+<![endif]-->
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:15px;line-height:1.4;color:#333;width:600px;margin:0;padding:0">
+<tr>
+<td valign="top" style="padding-right:20px;width:180px;font-family:'AktivGrotesk',Arial,sans-serif">
+<div style="font-weight:bold;color:#000;font-size:17px;margin-bottom:2px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%FirstName%% %%LastName%%</div>
+<div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>
+<div style="margin-bottom:15px"><img src="https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/images/optimized/rev-6c1cac3/betasite.exctel.com/wp-content/uploads/2025/04/Exctel-Logo-FA.png" alt="Exctel" width="160" style="display:block;border:none;outline:none"></div>
+</td>
+<td valign="top" style="padding-left:20px;font-size:14px;color:#333;font-family:'AktivGrotesk',Arial,sans-serif">
+<table cellpadding="3" cellspacing="0" border="0" style="font-size:14px;font-family:'AktivGrotesk',Arial,sans-serif">
+<tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif"><a href="mailto:%%Email%%" style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif">%%Email%%</span></a></td></tr>
+<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif"><a href="tel:%%MobileNumber%%" style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif">%%MobileNumber%%</span></a></td></tr>
+<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile2" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif"><a href="fax:%%FaxNumber%%" style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif">%%FaxNumber%%</span></a></td></tr>
+<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif"><a href="tel:%%PhoneNumber%%" style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#333;text-decoration:none;font-family:'AktivGrotesk',Arial,sans-serif">%%PhoneNumber%%</span></a></td></tr>
+<tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>
+</table>
+</td>
+</tr></table>
+<table width="600" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:2px solid #ff8331;line-height:0;font-size:0;margin:2px;padding:0">&nbsp;</td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:14px;width:500px;margin-top:10px">
+<tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><a href="https://www.exctel.com" target="_blank" style="color:#000;text-decoration:none;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;text-decoration:none;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">www.exctel.com</span></a></td>
+<td style="padding-left:20px;font-family:'AktivGrotesk',Arial,sans-serif">
+<table cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><a href="https://linkedin.com/company/exctel" target="_blank" style="text-decoration:none"><img src="https://img.icons8.com/ios-filled/50/000000/linkedin.png" width="20" height="20" alt="LinkedIn" style="display:block;border:none;outline:none;text-decoration:none"></a></td>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><a href="https://x.com/ExctelEngg" target="_blank" style="text-decoration:none"><img src="https://www.freeiconspng.com/uploads/new-x-twitter-logo-png-photo-1.png" width="20" height="20" alt="X" style="display:block;border:none;outline:none;text-decoration:none"></a></td>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><a href="https://facebook.com/exctel" target="_blank" style="text-decoration:none"><img src="https://img.icons8.com/ios-filled/50/000000/facebook-new.png" width="20" height="20" alt="Facebook" style="display:block;border:none;outline:none;text-decoration:none"></a></td>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><a href="https://www.instagram.com/exctelglobal" target="_blank" style="text-decoration:none"><img src="https://img.icons8.com/ios-filled/50/000000/instagram-new.png" width="20" height="20" alt="Instagram" style="display:block;border:none;outline:none;text-decoration:none"></a></td>
+</tr></table>
+</td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:9px;line-height:1.4;color:#333;width:600px;margin-top:10px">
+<tr><td style="padding-top:10px;font-style:italic;color:#555;text-align:justify;font-family:'AktivGrotesk',Arial,sans-serif">
+    This email and any attachments are confidential and intended solely for the use of the individual or entity to whom they are addressed. If you are not the intended recipient, please delete this message, notify the sender immediately, and note that any review, use, disclosure, or distribution of its contents is strictly prohibited. We accept no liability for any errors, delays, or security issues that may arise during the transmission of this email.
+</td></tr></table>`;
+
   const syncUsers = async () => {
     try {
       setIsSyncing(true);
-      const response = await autoSyncUsers();
+      
+      // Step 1: Sync users from Azure AD
+      await autoSyncUsers();
 
-      // Refetch users data using TanStack Query
+      // Step 2: Refetch users data
       await queryClient.invalidateQueries({ queryKey: ["users"] });
+      
+      // Step 3: Fetch updated users list
+      const updatedUsersResponse = await getUsers();
+      const updatedUsers = updatedUsersResponse?.users || [];
 
-      toast.success("Users synced successfully");
+      // Step 4: Fetch current signature configs
+      const configsResponse = await getAllConfigsAdmin();
+      const currentConfigs = configsResponse?.data || [];
+
+      // Step 5: Identify users without signatures
+      const usersWithoutSignatures = updatedUsers.filter(user => {
+        const userEmail = user.email || user._id;
+        return !currentConfigs.some(config => config.user_id === userEmail || config.user_id === user._id);
+      });
+
+      // Step 6: Create signatures for users who don't have them
+      if (usersWithoutSignatures.length > 0) {
+        const createPromises = usersWithoutSignatures.map(user => {
+          const userId = user.email || user._id;
+          return createConfigAdmin({
+            user_id: userId,
+            signature_name: `${user.name || user.email}'s Signature`,
+            html_template: DEFAULT_TEMPLATE,
+            description: "Auto-generated during user sync",
+            is_active: true,
+          });
+        });
+
+        await Promise.all(createPromises);
+        
+        // Step 7: Invalidate signature configs query
+        await queryClient.invalidateQueries({ queryKey: ["admin-signature-configs"] });
+        
+        toast.success(`Users synced successfully. Created ${usersWithoutSignatures.length} signature(s) for users without them.`);
+      } else {
+        toast.success("Users synced successfully. All users already have signatures.");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to sync users");
