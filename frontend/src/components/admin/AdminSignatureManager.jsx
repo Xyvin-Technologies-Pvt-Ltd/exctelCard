@@ -11,8 +11,10 @@ import {
   Edit, 
   Trash2,
   Plus,
-  X
+  X,
+  Eye
 } from "lucide-react";
+import SignaturePreviewModal from "./SignaturePreviewModal";
 
 // Default HTML template (same as in SignatureManager)
 const DEFAULT_TEMPLATE = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
@@ -50,6 +52,8 @@ const AdminSignatureManager = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [signatureName, setSignatureName] = useState("");
+  const [previewConfig, setPreviewConfig] = useState(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   // Fetch all signature configs
   const { data: configsData, isLoading: configsLoading, error: configsError } = useQuery({
@@ -385,6 +389,16 @@ const AdminSignatureManager = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
+                              setPreviewConfig(config);
+                              setIsPreviewModalOpen(true);
+                            }}
+                            className="text-green-600 hover:text-green-900"
+                            title="Preview"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
                               // TODO: Implement edit functionality
                               alert("Edit functionality coming soon");
                             }}
@@ -419,6 +433,18 @@ const AdminSignatureManager = () => {
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <SignaturePreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => {
+          setIsPreviewModalOpen(false);
+          setPreviewConfig(null);
+        }}
+        config={previewConfig}
+        userName={previewConfig ? getUserName(previewConfig.user_id) : null}
+        userEmail={previewConfig ? getUserEmail(previewConfig.user_id) : null}
+      />
     </div>
   );
 };
