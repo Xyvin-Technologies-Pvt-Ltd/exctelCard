@@ -323,3 +323,85 @@ exports.updatePreferences = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get user profile from Microsoft Graph API (for current user)
+ */
+exports.getProfileFromGraph = async (req, res) => {
+  try {
+    const { accessToken } = req.user;
+
+    if (!accessToken) {
+      return res.status(401).json({
+        success: false,
+        message: "No access token available. Please re-authenticate.",
+      });
+    }
+
+    console.log("🔍 Fetching user profile from Graph API for current user");
+
+    // Initialize Microsoft Graph Client
+    const client = Client.init({
+      authProvider: (done) => {
+        done(null, accessToken);
+      },
+    });
+
+    // Fetch user data from Microsoft Graph with all address fields
+    const graphUser = await client
+      .api("/me")
+      .select(
+        "id,displayName,mail,userPrincipalName,givenName,surname,jobTitle,department,mobilePhone,businessPhones,streetAddress,city,state,postalCode,country,countryOrRegion"
+      )
+      .get();
+
+    // Format address from components
+    const addressParts = [];
+    if (graphUser.streetAddress) addressParts.push(graphUser.streetAddress);
+    if (graphUser.city) addressParts.push(graphUser.city);
+    if (graphUser.state) addressParts.push(graphUser.state);
+    if (graphUser.postalCode) addressParts.push(graphUser.postalCode);
+    if (graphUser.country || graphUser.countryOrRegion) {
+      addressParts.push(graphUser.country || graphUser.countryOrRegion);
+    }
+    const formattedAddress = addressParts.length > 0 ? addressParts.join(", ") : "";
+
+    // Map Graph API response to signature profile format
+    const profile = {
+      firstName: graphUser.givenName || "",
+      lastName: graphUser.surname || "",
+      displayName: graphUser.displayName || "",
+      jobTitle: graphUser.jobTitle || "",
+      department: graphUser.department || "",
+      companyName: "Exctel",
+      mail: graphUser.mail || graphUser.userPrincipalName || "",
+      mobilePhone: graphUser.mobilePhone || "",
+      businessPhones: graphUser.businessPhones || [],
+      phoneNumber: Array.isArray(graphUser.businessPhones) && graphUser.businessPhones.length > 0
+        ? graphUser.businessPhones[0]
+        : "",
+      street: formattedAddress,
+      streetAddress: graphUser.streetAddress || "",
+      city: graphUser.city || "",
+      state: graphUser.state || "",
+      postalCode: graphUser.postalCode || "",
+      country: graphUser.country || graphUser.countryOrRegion || "",
+      faxNumber: graphUser.mobilePhone || "", // Use mobile as fallback for fax
+    };
+
+    console.log("✅ User profile fetched successfully from Graph API");
+
+    res.json({
+      success: true,
+      data: profile,
+      message: "User profile fetched successfully",
+    });
+  } catch (error) {
+    console.error("❌ Error fetching user profile from Graph API:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user profile from Graph API",
+      error: error.message,
+    });
+  }
+};

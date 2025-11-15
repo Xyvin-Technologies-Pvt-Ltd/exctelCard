@@ -1,6 +1,42 @@
 const User = require("../users/user.model");
 const UserActivity = require("../users/userActivity.model");
 const SSOConfig = require("./ssoConfig.model");
+const axios = require("axios");
+const { ConfidentialClientApplication } = require("@azure/msal-node");
+const { azureConfig } = require("../../config/azureConfig");
+
+// Initialize MSAL instance for Graph API access
+const msalInstance = new ConfidentialClientApplication(azureConfig);
+
+/**
+ * Get Graph API access token for admin operations
+ */
+const getGraphAccessToken = async () => {
+  try {
+    if (
+      !process.env.AZURE_CLIENT_ID ||
+      !process.env.AZURE_CLIENT_SECRET ||
+      !process.env.AZURE_TENANT_ID
+    ) {
+      throw new Error(
+        "Azure configuration missing. Please check AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID environment variables."
+      );
+    }
+
+    const tokenRequest = {
+      scopes: ["https://graph.microsoft.com/.default"],
+    };
+
+    const response = await msalInstance.acquireTokenByClientCredential(
+      tokenRequest
+    );
+
+    return response.accessToken;
+  } catch (error) {
+    console.error("❌ Error getting Graph access token:", error);
+    throw error;
+  }
+};
 
 /**
  * Get dashboard overview stats
@@ -369,6 +405,116 @@ const getSystemAnalytics = async (req, res) => {
   }
 };
 
+/**
+ * Get user profile from Microsoft Graph API by userId (Entra ID or email)
+ */
+const getUserProfileFromGraph = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    console.log(`🔍 Fetching user profile from Graph API for: ${userId}`);
+
+    // Get Graph API access token
+    let token;
+    try {
+      token = await getGraphAccessToken();
+    } catch (tokenError) {
+      console.error("❌ Failed to get access token:", tokenError.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to authenticate with Microsoft Graph API",
+        error: tokenError.message,
+      });
+    }
+
+    // Try to find user in database first to get Entra ID if userId is email
+    let user = await User.findOne({
+      $or: [{ email: userId.toLowerCase() }, { entraId: userId }],
+    });
+
+    // Use Entra ID if found, otherwise use userId as-is (might be Entra ID or email)
+    const userIdentifier = user?.entraId || userId;
+
+    // Fetch user from Graph API
+    const userResponse = await axios.get(
+      `https://graph.microsoft.com/v1.0/users/${userIdentifier}?$select=id,displayName,mail,userPrincipalName,givenName,surname,jobTitle,department,mobilePhone,businessPhones,streetAddress,city,state,postalCode,country,countryOrRegion`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const graphUser = userResponse.data;
+
+    // Format address from components
+    const addressParts = [];
+    if (graphUser.streetAddress) addressParts.push(graphUser.streetAddress);
+    if (graphUser.city) addressParts.push(graphUser.city);
+    if (graphUser.state) addressParts.push(graphUser.state);
+    if (graphUser.postalCode) addressParts.push(graphUser.postalCode);
+    if (graphUser.country || graphUser.countryOrRegion) {
+      addressParts.push(graphUser.country || graphUser.countryOrRegion);
+    }
+    const formattedAddress = addressParts.length > 0 ? addressParts.join(", ") : "";
+
+    // Map Graph API response to signature profile format
+    const profile = {
+      firstName: graphUser.givenName || "",
+      lastName: graphUser.surname || "",
+      displayName: graphUser.displayName || "",
+      jobTitle: graphUser.jobTitle || "",
+      department: graphUser.department || "",
+      companyName: "Exctel",
+      mail: graphUser.mail || graphUser.userPrincipalName || "",
+      mobilePhone: graphUser.mobilePhone || "",
+      businessPhones: graphUser.businessPhones || [],
+      phoneNumber: Array.isArray(graphUser.businessPhones) && graphUser.businessPhones.length > 0
+        ? graphUser.businessPhones[0]
+        : "",
+      street: formattedAddress,
+      streetAddress: graphUser.streetAddress || "",
+      city: graphUser.city || "",
+      state: graphUser.state || "",
+      postalCode: graphUser.postalCode || "",
+      country: graphUser.country || graphUser.countryOrRegion || "",
+      faxNumber: graphUser.mobilePhone || "", // Use mobile as fallback for fax
+    };
+
+    console.log("✅ User profile fetched successfully from Graph API");
+
+    res.json({
+      success: true,
+      data: profile,
+      message: "User profile fetched successfully",
+    });
+  } catch (error) {
+    console.error("❌ Error fetching user profile from Graph API:", error);
+    
+    if (error.response?.status === 404) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found in Microsoft Graph",
+        error: "User not found",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user profile from Graph API",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -379,4 +525,5 @@ module.exports = {
   saveSSOConfiguration,
   testSSOConfiguration,
   getSystemAnalytics,
+  getUserProfileFromGraph,
 };

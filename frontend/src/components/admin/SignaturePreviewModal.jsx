@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import SignaturePreview from "../outlook/SignaturePreview";
 import { generatePreview } from "../../api/outlook-signature.api";
+import { getUserProfileFromGraphAdmin } from "../../api/users";
 
 /**
  * SignaturePreviewModal - Modal component for previewing and copying user signatures
@@ -11,6 +12,14 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
   const [previewHtml, setPreviewHtml] = useState("");
   const [copyState, setCopyState] = useState("idle");
   const [error, setError] = useState(null);
+
+  // Fetch fresh user profile from Graph API
+  const { data: graphProfileData, isLoading: isLoadingProfile, error: profileError } = useQuery({
+    queryKey: ["user-profile-from-graph", config?.user_id],
+    queryFn: () => getUserProfileFromGraphAdmin(config.user_id),
+    enabled: isOpen && !!config?.user_id,
+    retry: 1,
+  });
 
   // Preview mutation
   const previewMutation = useMutation({
@@ -25,22 +34,51 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
     },
   });
 
-  // Generate preview when modal opens or config changes
+  // Generate preview when modal opens, config changes, or fresh profile data is available
   useEffect(() => {
     if (isOpen && config) {
       setError(null);
       setPreviewHtml("");
-      
-      // Prepare preview data from config
+
+      // Wait for Graph API profile if it's loading, otherwise use stored profile as fallback
+      if (isLoadingProfile) {
+        return; // Wait for profile to load
+      }
+
+      // Use fresh profile from Graph API if available, otherwise fallback to stored profile
+      const userProfile = graphProfileData?.data || config.user_profile || {};
+
+      // Map Graph API profile to signature profile format with phone number logic
+      const mappedProfile = {
+        firstName: userProfile.firstName || "",
+        lastName: userProfile.lastName || "",
+        jobTitle: userProfile.jobTitle || "",
+        companyName: userProfile.companyName || "Exctel",
+        mail: userProfile.mail || "",
+        mobilePhone: userProfile.mobilePhone || "",
+        // Phone number logic: only include PhoneNumber if both mobilePhone and businessPhones exist
+        phoneNumber: (userProfile.mobilePhone && userProfile.businessPhones?.length > 0)
+          ? (userProfile.businessPhones[0] || "")
+          : "",
+        faxNumber: userProfile.mobilePhone || userProfile.faxNumber || "", // Use mobile as fallback for fax
+        street: userProfile.street || "",
+        city: userProfile.city || "",
+        state: userProfile.state || "",
+        postalCode: userProfile.postalCode || "",
+        country: userProfile.country || "",
+        department: userProfile.department || "",
+      };
+
+      // Prepare preview data
       const previewData = {
         html_template: config.html_template,
-        user_profile: config.user_profile || {},
+        user_profile: mappedProfile,
         placeholders: config.placeholders || {},
       };
 
       previewMutation.mutate(previewData);
     }
-  }, [isOpen, config]);
+  }, [isOpen, config, graphProfileData, isLoadingProfile]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -110,17 +148,24 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
-            {error && (
+            {(error || profileError) && (
               <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{error}</span>
+                  <span className="font-medium">
+                    {profileError?.response?.data?.message || profileError?.message || error}
+                  </span>
                 </div>
+                {profileError && (
+                  <p className="text-sm mt-1 text-red-600">
+                    Using stored profile data as fallback
+                  </p>
+                )}
               </div>
             )}
 
             <SignaturePreview
               html={previewHtml}
-              isLoading={previewMutation.isPending}
+              isLoading={isLoadingProfile || previewMutation.isPending}
               onCopy={previewHtml ? copySignatureToClipboard : undefined}
               copyState={copyState}
             />

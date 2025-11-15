@@ -17,6 +17,7 @@ router.get("/dashboard/stats", adminController.getDashboardStats);
 router.get("/users", adminController.getUsers);
 router.get("/users/search", adminController.searchUsers);
 router.get("/users/:userId/activity", adminController.getUserActivity);
+router.get("/users/:userId/profile-from-graph", adminController.getUserProfileFromGraph);
 router.put("/users/:userId/status", adminController.updateUserStatus);
 
 // SSO configuration routes

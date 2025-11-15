@@ -71,3 +71,19 @@ export const updateUserPreferences = async (preferences) => {
     throw error;
   }
 };
+
+/**
+ * Get user profile from Microsoft Graph API (Admin only)
+ */
+export const getUserProfileFromGraphAdmin = async (userId) => {
+  try {
+    const response = await api.get(`/admin/users/${userId}/profile-from-graph`);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to fetch user profile from Graph API";
+    // Don't show toast for this - let the component handle it
+    console.error(errorMessage);
+    throw error;
+  }
+};

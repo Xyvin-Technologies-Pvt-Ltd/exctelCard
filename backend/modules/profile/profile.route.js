@@ -24,4 +24,7 @@ router.get("/preferences", profileController.getPreferences);
 // Update user preferences
 router.put("/preferences", profileController.updatePreferences);
 
+// Get user profile from Graph API
+router.get("/from-graph", profileController.getProfileFromGraph);
+
 module.exports = router;
