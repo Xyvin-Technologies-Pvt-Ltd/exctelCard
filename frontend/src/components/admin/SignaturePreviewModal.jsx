@@ -20,13 +20,13 @@ const generateShortSignature = (userProfile) => {
   
   // Email with icon
   if (userProfile.mail) {
-    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Email ${userProfile.mail}`;
+    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.mail}`;
     parts.push(emailPart);
   }
   
   // Landline (PhoneNumber) with icon
   if (userProfile.phoneNumber) {
-    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Landline ${userProfile.phoneNumber}`;
+    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.phoneNumber}`;
     parts.push(phonePart);
   }
 
@@ -35,7 +35,7 @@ const generateShortSignature = (userProfile) => {
   if (!shortSignatureText) return "";
 
   // Return HTML with Outlook-compatible inline styles
-  return `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:13px;line-height:1.5;color:#333;margin:0;padding:0">${shortSignatureText}</p>`;
+  return `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:15px;line-height:1.4;color:#333;margin:0;padding:0">${shortSignatureText}</p>`;
 };
 
 /**
