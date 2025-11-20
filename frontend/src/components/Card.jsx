@@ -107,7 +107,7 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
           </div>
         </div>
 
-        {/* Back Side */}
+        {/* Back Sides */}
         <div className="business-card-side business-card-back relative h-full">
           {/* Card Back Background Image */}
           <img
