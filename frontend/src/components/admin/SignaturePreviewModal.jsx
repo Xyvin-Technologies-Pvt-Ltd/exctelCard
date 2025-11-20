@@ -24,12 +24,6 @@ const generateShortSignature = (userProfile) => {
     parts.push(emailPart);
   }
   
-  // Mobile with icon
-  // if (userProfile.mobilePhone) {
-  //   const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Mobile ${userProfile.mobilePhone}`;
-  //   parts.push(mobilePart);
-  // }
-  
   // Landline (PhoneNumber) with icon
   if (userProfile.phoneNumber) {
     const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Landline ${userProfile.phoneNumber}`;
