@@ -5,12 +5,53 @@ import SignaturePreview from "../outlook/SignaturePreview";
 import { generatePreview } from "../../api/outlook-signature.api";
 import { getUserProfileFromGraphAdmin } from "../../api/users";
 
+// Generate short signature HTML from user profile
+const generateShortSignature = (userProfile) => {
+  if (!userProfile) return "";
+
+  const parts = [];
+  
+  // Name
+  const fullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
+  if (fullName) parts.push(fullName);
+  
+  // Job Title
+  if (userProfile.jobTitle) parts.push(userProfile.jobTitle);
+  
+  // Email with icon
+  if (userProfile.mail) {
+    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Email ${userProfile.mail}`;
+    parts.push(emailPart);
+  }
+  
+  // Mobile with icon
+  // if (userProfile.mobilePhone) {
+  //   const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Mobile ${userProfile.mobilePhone}`;
+  //   parts.push(mobilePart);
+  // }
+  
+  // Landline (PhoneNumber) with icon
+  if (userProfile.phoneNumber) {
+    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Landline ${userProfile.phoneNumber}`;
+    parts.push(phonePart);
+  }
+
+  const shortSignatureText = parts.join(" | ");
+  
+  if (!shortSignatureText) return "";
+
+  // Return HTML with Outlook-compatible inline styles
+  return `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:13px;line-height:1.5;color:#333;margin:0;padding:0">${shortSignatureText}</p>`;
+};
+
 /**
  * SignaturePreviewModal - Modal component for previewing and copying user signatures
  */
 const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail }) => {
   const [previewHtml, setPreviewHtml] = useState("");
+  const [shortSignatureHtml, setShortSignatureHtml] = useState("");
   const [copyState, setCopyState] = useState("idle");
+  const [shortCopyState, setShortCopyState] = useState("idle");
   const [error, setError] = useState(null);
 
   // Fetch fresh user profile from Graph API
@@ -69,6 +110,10 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
         department: userProfile.department || "",
       };
 
+      // Generate short signature
+      const shortSig = generateShortSignature(mappedProfile);
+      setShortSignatureHtml(shortSig);
+
       // Prepare preview data
       const previewData = {
         html_template: config.html_template,
@@ -84,8 +129,10 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
   useEffect(() => {
     if (!isOpen) {
       setPreviewHtml("");
+      setShortSignatureHtml("");
       setError(null);
       setCopyState("idle");
+      setShortCopyState("idle");
     }
   }, [isOpen]);
 
@@ -111,6 +158,31 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
       console.error("Failed to copy signature:", err);
       setCopyState("error");
       setTimeout(() => setCopyState("idle"), 4000);
+    }
+  };
+
+  const copyShortSignatureToClipboard = async () => {
+    if (!shortSignatureHtml || previewMutation.isPending) return;
+
+    try {
+      setShortCopyState("pending");
+
+      if (navigator.clipboard?.write) {
+        const blob = new Blob([shortSignatureHtml], { type: "text/html" });
+        const item = new ClipboardItem({ "text/html": blob });
+        await navigator.clipboard.write([item]);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shortSignatureHtml);
+      } else {
+        throw new Error("Clipboard API not supported");
+      }
+
+      setShortCopyState("success");
+      setTimeout(() => setShortCopyState("idle"), 3000);
+    } catch (err) {
+      console.error("Failed to copy short signature:", err);
+      setShortCopyState("error");
+      setTimeout(() => setShortCopyState("idle"), 4000);
     }
   };
 
@@ -163,12 +235,25 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
               </div>
             )}
 
-            <SignaturePreview
-              html={previewHtml}
-              isLoading={isLoadingProfile || previewMutation.isPending}
-              onCopy={previewHtml ? copySignatureToClipboard : undefined}
-              copyState={copyState}
-            />
+            <div className="space-y-6">
+              <SignaturePreview
+                html={previewHtml}
+                isLoading={isLoadingProfile || previewMutation.isPending}
+                onCopy={previewHtml ? copySignatureToClipboard : undefined}
+                copyState={copyState}
+              />
+
+              {/* Short Signature */}
+              {shortSignatureHtml && (
+                <SignaturePreview
+                  html={shortSignatureHtml}
+                  isLoading={isLoadingProfile || previewMutation.isPending}
+                  onCopy={shortSignatureHtml ? copyShortSignatureToClipboard : undefined}
+                  copyState={shortCopyState}
+                  title="Short Signature"
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

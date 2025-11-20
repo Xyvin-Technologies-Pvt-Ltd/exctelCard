@@ -8,6 +8,45 @@ import { useAuthStore } from "../store/authStore";
 import { useProfile } from "../hooks/useProfile";
 import { getProfileFromGraph } from "../api/profile";
 
+// Generate short signature HTML from user profile
+const generateShortSignature = (userProfile) => {
+  if (!userProfile) return "";
+
+  const parts = [];
+  
+  // Name
+  const fullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
+  if (fullName) parts.push(fullName);
+  
+  // Job Title
+  if (userProfile.jobTitle) parts.push(userProfile.jobTitle);
+  
+  // Email with icon
+  if (userProfile.mail) {
+    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Email ${userProfile.mail}`;
+    parts.push(emailPart);
+  }
+  
+  // Mobile with icon
+  if (userProfile.mobilePhone) {
+    const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Mobile ${userProfile.mobilePhone}`;
+    parts.push(mobilePart);
+  }
+  
+  // Landline (PhoneNumber) with icon
+  if (userProfile.phoneNumber) {
+    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none"> Landline ${userProfile.phoneNumber}`;
+    parts.push(phonePart);
+  }
+
+  const shortSignatureText = parts.join(" | ");
+  
+  if (!shortSignatureText) return "";
+
+  // Return HTML with Outlook-compatible inline styles
+  return `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:13px;line-height:1.5;color:#333;margin:0;padding:0">${shortSignatureText}</p>`;
+};
+
 // Default HTML template - Outlook compatible with inline styles
 const DEFAULT_TEMPLATE = `<!--[if mso]>
 <style type="text/css">
@@ -54,9 +93,11 @@ const SignatureManager = () => {
   const { data: profileData } = useProfile();
   const [userProfile, setUserProfile] = useState(null);
   const [previewHtml, setPreviewHtml] = useState("");
+  const [shortSignatureHtml, setShortSignatureHtml] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copyState, setCopyState] = useState("idle");
+  const [shortCopyState, setShortCopyState] = useState("idle");
 
   // Fetch fresh user profile from Graph API
   const { data: graphProfileData, isLoading: isLoadingProfile, error: profileError, refetch: refetchProfile } = useQuery({
@@ -78,6 +119,31 @@ const SignatureManager = () => {
       setIsLoading(false);
     },
   });
+
+  const copyShortSignatureToClipboard = async () => {
+    if (!shortSignatureHtml || isLoading || previewMutation.isPending) return;
+
+    try {
+      setShortCopyState("pending");
+
+      if (navigator.clipboard?.write) {
+        const blob = new Blob([shortSignatureHtml], { type: "text/html" });
+        const item = new ClipboardItem({ "text/html": blob });
+        await navigator.clipboard.write([item]);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shortSignatureHtml);
+      } else {
+        throw new Error("Clipboard API not supported");
+      }
+
+      setShortCopyState("success");
+      setTimeout(() => setShortCopyState("idle"), 3000);
+    } catch (err) {
+      console.error("Failed to copy short signature:", err);
+      setShortCopyState("error");
+      setTimeout(() => setShortCopyState("idle"), 4000);
+    }
+  };
 
   const copySignatureToClipboard = async () => {
     if (!previewHtml || isLoading || previewMutation.isPending) return;
@@ -158,12 +224,16 @@ const SignatureManager = () => {
           department: graphUser.department || "",
         };
 
-        setUserProfile(mappedProfile);
-        const previewData = {
-          html_template: DEFAULT_TEMPLATE,
-          user_profile: mappedProfile,
-        };
-        previewMutation.mutate(previewData);
+      setUserProfile(mappedProfile);
+      // Generate short signature
+      const shortSig = generateShortSignature(mappedProfile);
+      setShortSignatureHtml(shortSig);
+      
+      const previewData = {
+        html_template: DEFAULT_TEMPLATE,
+        user_profile: mappedProfile,
+      };
+      previewMutation.mutate(previewData);
       } else {
         setError(profileError.message || "Failed to load user profile");
         setIsLoading(false);
@@ -200,6 +270,9 @@ const SignatureManager = () => {
       };
 
       setUserProfile(mappedProfile);
+      // Generate short signature
+      const shortSig = generateShortSignature(mappedProfile);
+      setShortSignatureHtml(shortSig);
 
       // Generate preview with fetched data
       const previewData = {
@@ -296,7 +369,8 @@ const SignatureManager = () => {
 
         {/* Preview Section */}
         <div className="px-6 py-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Main Signature */}
             <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-6">
               <SignaturePreview 
                 html={previewHtml} 
@@ -305,6 +379,19 @@ const SignatureManager = () => {
                 copyState={copyState}
               />
             </div>
+
+            {/* Short Signature */}
+            {shortSignatureHtml && (
+              <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-6">
+                <SignaturePreview 
+                  html={shortSignatureHtml} 
+                  isLoading={isLoading || isLoadingProfile || previewMutation.isPending} 
+                  onCopy={shortSignatureHtml ? copyShortSignatureToClipboard : undefined}
+                  copyState={shortCopyState}
+                  title="Short Signature"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

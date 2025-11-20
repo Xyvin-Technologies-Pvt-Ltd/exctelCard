@@ -4,7 +4,7 @@ import { Copy, Check, Loader2 } from "lucide-react";
 /**
  * SignaturePreview component - Displays HTML signature preview
  */
-const SignaturePreview = ({ html, isLoading, onCopy, copyState = "idle" }) => {
+const SignaturePreview = ({ html, isLoading, onCopy, copyState = "idle", title = "Signature Preview" }) => {
   const getCopyButtonContent = () => {
     switch (copyState) {
       case "pending":
@@ -41,7 +41,7 @@ const SignaturePreview = ({ html, isLoading, onCopy, copyState = "idle" }) => {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Signature Preview</h2>
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
         {onCopy && (
           <button
             onClick={onCopy}
