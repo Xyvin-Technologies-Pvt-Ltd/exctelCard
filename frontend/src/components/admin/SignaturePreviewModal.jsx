@@ -5,6 +5,13 @@ import SignaturePreview from "../outlook/SignaturePreview";
 import { generatePreview } from "../../api/outlook-signature.api";
 import { getUserProfileFromGraphAdmin } from "../../api/users";
 
+const ZERO_WIDTH_SPACE = "\u200B";
+
+const obfuscateEmail = (email) => {
+  if (!email) return "";
+  return email.replace(/([@.])/g, `$1${ZERO_WIDTH_SPACE}`);
+};
+
 // Generate short signature HTML from user profile
 const generateShortSignature = (userProfile) => {
   if (!userProfile) return "";
@@ -20,7 +27,7 @@ const generateShortSignature = (userProfile) => {
   
   // Email with icon
   if (userProfile.mail) {
-    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.mail}`;
+    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(userProfile.mail)}`;
     parts.push(emailPart);
   }
   

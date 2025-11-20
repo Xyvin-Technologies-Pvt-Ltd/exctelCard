@@ -179,7 +179,7 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 </tr></table>
 <table width="600" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:2px solid #ff8331;line-height:0;font-size:0;margin:2px;padding:0">&nbsp;</td></tr></table>
 <table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:14px;width:500px;margin-top:10px">
-<tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">www.exctel.com</span></td>
+<tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">w&#8203;w&#8203;w&#8203;.&#8203;exctel&#8203;.&#8203;com</span></td>
 <td style="padding-left:20px;font-family:'AktivGrotesk',Arial,sans-serif">
 <table cellpadding="0" cellspacing="0" border="0"><tr>
 <td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/linkedin.png" width="20" height="20" alt="LinkedIn" style="display:block;border:none;outline:none"></td>

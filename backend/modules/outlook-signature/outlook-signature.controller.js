@@ -25,6 +25,13 @@ function getBaseUrlWithHttps(req) {
   return baseUrl;
 }
 
+const ZERO_WIDTH_SPACE = '\u200B';
+
+function insertZeroWidthSpaces(text) {
+  if (!text) return '';
+  return text.replace(/([@.])/g, `$1${ZERO_WIDTH_SPACE}`);
+}
+
 // Default HTML template from requirements - Outlook compatible with inline styles
 const DEFAULT_HTML_TEMPLATE = `<!--[if mso]>
 <style type="text/css">
@@ -51,7 +58,7 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 </tr></table>
 <table width="600" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:2px solid #ff8331;line-height:0;font-size:0;margin:2px;padding:0">&nbsp;</td></tr></table>
 <table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:14px;width:500px;margin-top:10px">
-<tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">www.exctel.com</span></td>
+<tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">w&#8203;w&#8203;w&#8203;.&#8203;exctel&#8203;.&#8203;com</span></td>
 <td style="padding-left:20px;font-family:'AktivGrotesk',Arial,sans-serif">
 <table cellpadding="0" cellspacing="0" border="0"><tr>
 <td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/linkedin.png" width="20" height="20" alt="LinkedIn" style="display:block;border:none;outline:none"></td>
@@ -88,6 +95,11 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     '%%CompanyName%%': userProfile.companyName || placeholders.CompanyName || 'Exctel',
     '%%Department%%': userProfile.department || placeholders.Department || '',
   };
+
+  // Prevent Outlook auto-linking by inserting zero-width spaces
+  if (mapping['%%Email%%']) {
+    mapping['%%Email%%'] = insertZeroWidthSpaces(mapping['%%Email%%']);
+  }
 
   // Replace all placeholders
   Object.keys(mapping).forEach(placeholder => {
