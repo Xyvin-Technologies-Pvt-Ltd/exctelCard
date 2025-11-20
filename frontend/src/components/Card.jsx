@@ -55,41 +55,40 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
                   size={12}
                   className="mr-2 text-gray-600 flex-shrink-0"
                 />
-                  <span>{user?.email || "-"}</span>
+                <span>{user?.email || "-"}</span>
               </div>
-              <div className="flex items-center text-xs md:text-sm text-gray-700 font-aktiv-bold">
-                <FaMobileAlt
-                  size={12}
-                  className="mr-2 text-gray-600 flex-shrink-0"
-                />
-                <RiWhatsappFill
-                  size={12}
-                  className="mr-2 text-gray-600 flex-shrink-0"
-                />
-                <span>{user?.phone || "+65 9027 7225"}</span>
-              </div>
-              {user?.phone2 && (
-             <div className="flex items-start text-xs md:text-sm text-gray-700 font-aktiv-bold">
-             <div className="w-5 h-2"></div>
-             <TbDeviceLandlinePhone
-               size={12}
-               className="mr-2 text-gray-600 flex-shrink-0 mt-0.5"
-             />
-             <div className="whitespace-pre-line max-w-sm text-left pr-2">
-               {user?.phone2 ||
-                 "+65 9027 7225"}
-             </div>
-           </div>
+              {user?.phone && (
+                <div className="flex items-center text-xs md:text-sm text-gray-700 font-aktiv-bold">
+                  <FaMobileAlt
+                    size={12}
+                    className="mr-2 text-gray-600 flex-shrink-0"
+                  />
+                  <RiWhatsappFill
+                    size={12}
+                    className="mr-2 text-gray-600 flex-shrink-0"
+                  />
+                  <span>{user.phone}</span>
+                </div>
               )}
+              <div className="flex items-start text-xs md:text-sm text-gray-700 font-aktiv-bold">
+                <div className="w-5 h-2"></div>
+                <TbDeviceLandlinePhone
+                  size={12}
+                  className="mr-2 text-gray-600 flex-shrink-0 mt-0.5"
+                />
+                <div className="whitespace-pre-line max-w-sm text-left pr-2">
+                  {user?.phone2 || "+65 6714 6714"}
+                </div>
+              </div>
               <div className="flex items-start text-xs md:text-sm text-gray-700 font-aktiv-bold">
                 <div className="w-7 h-2"></div>
                 <div>
-                <MapPin
-                  size={12}
-                  className=" mr-2 text-gray-600 flex-shrink-0 mt-0.5"
-                />
+                  <MapPin
+                    size={12}
+                    className=" mr-2 text-gray-600 flex-shrink-0 mt-0.5"
+                  />
                 </div>
-                
+
                 <div className="whitespace-pre-line max-w-sm text-left mx-2">
                   {user?.address ||
                     "3791 Jalan Bukit Merah\n#06-14 E-Centre @ Redhill\nSingapore 159471"}
