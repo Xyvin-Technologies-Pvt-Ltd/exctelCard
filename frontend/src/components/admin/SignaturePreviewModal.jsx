@@ -95,7 +95,7 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
         phoneNumber: (userProfile.mobilePhone && userProfile.businessPhones?.length > 0)
           ? (userProfile.businessPhones[0] || "")
           : "",
-        faxNumber: userProfile.mobilePhone || userProfile.faxNumber || "", // Use mobile as fallback for fax
+        faxNumber: userProfile.faxNumber || "", // Only use actual fax number, no fallback
         street: userProfile.street || "",
         city: userProfile.city || "",
         state: userProfile.state || "",

@@ -43,7 +43,7 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 <table cellpadding="3" cellspacing="0" border="0" style="font-size:14px;font-family:'AktivGrotesk',Arial,sans-serif">
 <tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>
 <tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>
-<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile2" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>
+%%IF_FAX%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Fax" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>%%ENDIF_FAX%%
 <tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>
 <tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>
 </table>
@@ -94,6 +94,16 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
     html = html.replace(regex, mapping[placeholder]);
   });
+
+  // Handle conditional fax row - only show if faxNumber exists
+  const faxNumber = userProfile.faxNumber || placeholders.FaxNumber || '';
+  if (faxNumber && faxNumber.trim() !== '') {
+    // Replace the conditional block with the fax row
+    html = html.replace(/%%IF_FAX%%([\s\S]*?)%%ENDIF_FAX%%/g, '$1');
+  } else {
+    // Remove the conditional block if fax number doesn't exist
+    html = html.replace(/%%IF_FAX%%[\s\S]*?%%ENDIF_FAX%%/g, '');
+  }
 
   return html;
 }

@@ -791,7 +791,7 @@ async function autoSyncUsers(req, res) {
         try {
           // Fetch full user details from Graph API
           const userResponse = await axios.get(
-            `https://graph.microsoft.com/v1.0/users/${principalId}?$select=id,displayName,mail,userPrincipalName,jobTitle,department,mobilePhone,businessPhones,streetAddress,city,country,postalCode,state,countryOrRegion`,
+            `https://graph.microsoft.com/v1.0/users/${principalId}?$select=id,displayName,mail,userPrincipalName,jobTitle,department,mobilePhone,businessPhones,faxNumber,streetAddress,city,country,postalCode,state,countryOrRegion`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,

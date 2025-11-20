@@ -44,7 +44,7 @@ const generateShortSignature = (userProfile) => {
 // Default HTML template - Outlook compatible with inline styles
 const DEFAULT_TEMPLATE = `<!--[if mso]>
 <style type="text/css">
-@font-face{font-family:"AktivGrotesk";src:url("https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/static/source/rev-0cb01a5/betasite.exctel.com/wp-content/uploads/2025/03/AktivGrotesk-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
+    @font-face{font-family:"AktivGrotesk";src:url("https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/static/source/rev-0cb01a5/betasite.exctel.com/wp-content/uploads/2025/03/AktivGrotesk-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
 body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 </style>
 <![endif]-->
@@ -54,17 +54,17 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 <div style="font-weight:bold;color:#000;font-size:17px;margin-bottom:2px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%FirstName%% %%LastName%%</div>
 <div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>
 <div style="margin-bottom:15px"><img src="https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/images/optimized/rev-6c1cac3/betasite.exctel.com/wp-content/uploads/2025/04/Exctel-Logo-FA.png" alt="Exctel" width="160" style="display:block;border:none;outline:none"></div>
-</td>
+    </td>
 <td valign="top" style="padding-left:20px;font-size:14px;color:#333;font-family:'AktivGrotesk',Arial,sans-serif">
 <table cellpadding="3" cellspacing="0" border="0" style="font-size:14px;font-family:'AktivGrotesk',Arial,sans-serif">
 <tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>
 <tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>
-<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile2" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>
+%%IF_FAX%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Fax" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>%%ENDIF_FAX%%
 <tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>
 <tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>
-</table>
-</td>
-</tr></table>
+    </table>
+    </td>
+    </tr></table>
 <table width="600" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:2px solid #ff8331;line-height:0;font-size:0;margin:2px;padding:0">&nbsp;</td></tr></table>
 <table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:14px;width:500px;margin-top:10px">
 <tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">www.exctel.com</span></td>
@@ -74,8 +74,8 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 <td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://www.freeiconspng.com/uploads/new-x-twitter-logo-png-photo-1.png" width="20" height="20" alt="X" style="display:block;border:none;outline:none"></td>
 <td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/facebook-new.png" width="20" height="20" alt="Facebook" style="display:block;border:none;outline:none"></td>
 <td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/instagram-new.png" width="20" height="20" alt="Instagram" style="display:block;border:none;outline:none"></td>
-</tr></table>
-</td></tr></table>
+    </tr></table>
+    </td></tr></table>
 <table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:9px;line-height:1.4;color:#333;width:600px;margin-top:10px">
 <tr><td style="padding-top:10px;font-style:italic;color:#555;text-align:justify;font-family:'AktivGrotesk',Arial,sans-serif">
     This email and any attachments are confidential and intended solely for the use of the individual or entity to whom they are addressed. If you are not the intended recipient, please delete this message, notify the sender immediately, and note that any review, use, disclosure, or distribution of its contents is strictly prohibited. We accept no liability for any errors, delays, or security issues that may arise during the transmission of this email.
@@ -167,7 +167,7 @@ const SignatureManager = () => {
   // Generate preview when Graph API profile data is available
   useEffect(() => {
     if (isLoadingProfile) {
-      setIsLoading(true);
+        setIsLoading(true);
       return; // Wait for profile to load
     }
 
@@ -206,7 +206,7 @@ const SignatureManager = () => {
           companyName: "Exctel",
           mail: graphUser.mail || "",
           mobilePhone: graphUser.mobilePhone || "",
-          faxNumber: graphUser.mobilePhone || "",
+          faxNumber: "",
           phoneNumber: Array.isArray(graphUser.businessPhones) && graphUser.businessPhones.length > 0
             ? graphUser.businessPhones[0]
             : "",
@@ -218,7 +218,7 @@ const SignatureManager = () => {
           department: graphUser.department || "",
         };
 
-      setUserProfile(mappedProfile);
+        setUserProfile(mappedProfile);
       // Generate short signature
       const shortSig = generateShortSignature(mappedProfile);
       setShortSignatureHtml(shortSig);
@@ -254,7 +254,7 @@ const SignatureManager = () => {
         phoneNumber: (userProfile.mobilePhone && userProfile.businessPhones?.length > 0)
           ? (userProfile.businessPhones[0] || "")
           : "",
-        faxNumber: userProfile.mobilePhone || userProfile.faxNumber || "", // Use mobile as fallback for fax
+        faxNumber: userProfile.faxNumber || "", // Only use actual fax number, no fallback
         street: userProfile.street || "",
         city: userProfile.city || "",
         state: userProfile.state || "",
@@ -267,15 +267,15 @@ const SignatureManager = () => {
       // Generate short signature
       const shortSig = generateShortSignature(mappedProfile);
       setShortSignatureHtml(shortSig);
-
-      // Generate preview with fetched data
-      const previewData = {
-        html_template: DEFAULT_TEMPLATE,
+        
+        // Generate preview with fetched data
+        const previewData = {
+          html_template: DEFAULT_TEMPLATE,
         user_profile: mappedProfile,
-      };
-
-      previewMutation.mutate(previewData);
-    }
+        };
+        
+        previewMutation.mutate(previewData);
+      }
   }, [graphProfileData, isLoadingProfile, profileError, profileData, authUser]);
 
   // Handle refresh
@@ -318,37 +318,37 @@ const SignatureManager = () => {
       </div>
 
       <div className="w-full mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Outlook Signature Preview</h1>
-              <p className="text-slate-600 mt-1">
-                Your personalized email signature preview
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleRefresh}
+          {/* Header */}
+          <div className="px-6 py-6 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Outlook Signature Preview</h1>
+                <p className="text-slate-600 mt-1">
+                  Your personalized email signature preview
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleRefresh}
                 disabled={isLoading || isLoadingProfile || previewMutation.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
                 {(isLoading || isLoadingProfile || previewMutation.isPending) ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Refresh
-              </button>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Refresh
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Error Message */}
+          {/* Error Message */}
         {(error || profileError) && (
-          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
+            <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
               <span className="font-medium">
                 {profileError?.response?.data?.message || profileError?.message || error}
               </span>
@@ -359,7 +359,7 @@ const SignatureManager = () => {
               </p>
             )}
           </div>
-        )}
+          )}
 
         {/* Preview Section */}
         <div className="px-6 py-6">

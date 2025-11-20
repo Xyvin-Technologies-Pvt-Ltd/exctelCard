@@ -444,7 +444,7 @@ const getUserProfileFromGraph = async (req, res) => {
 
     // Fetch user from Graph API
     const userResponse = await axios.get(
-      `https://graph.microsoft.com/v1.0/users/${userIdentifier}?$select=id,displayName,mail,userPrincipalName,givenName,surname,jobTitle,department,mobilePhone,businessPhones,streetAddress,city,state,postalCode,country,countryOrRegion`,
+      `https://graph.microsoft.com/v1.0/users/${userIdentifier}?$select=id,displayName,mail,userPrincipalName,givenName,surname,jobTitle,department,mobilePhone,businessPhones,faxNumber,streetAddress,city,state,postalCode,country,countryOrRegion`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -486,7 +486,7 @@ const getUserProfileFromGraph = async (req, res) => {
       state: graphUser.state || "",
       postalCode: graphUser.postalCode || "",
       country: graphUser.country || graphUser.countryOrRegion || "",
-      faxNumber: graphUser.mobilePhone || "", // Use mobile as fallback for fax
+      faxNumber: graphUser.faxNumber || "", // Only use actual fax number, no fallback
     };
 
     console.log("✅ User profile fetched successfully from Graph API");
