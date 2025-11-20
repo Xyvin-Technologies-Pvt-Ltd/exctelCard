@@ -67,7 +67,7 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 fontFamily: "Arial, sans-serif",
               }}
             >
-              {user?.name || "NOWSHAD HAMEED"}
+              {user?.name || "N/A"}
             </h2>
             <p
               style={{
@@ -78,7 +78,7 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 fontFamily: "Arial, sans-serif",
               }}
             >
-              {user?.title || "Chief Executive Officer"}
+              {user?.title || "N/A"}
             </p>
           </div>
 
@@ -134,58 +134,12 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                   alignSelf: "center",
                 }}
               >
-                {user?.email || "nowshad.hameed@exctel.com"}
+                {user?.email || "N/A"}
               </span>
             </div>
 
             {/* Phone Row */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                fontSize: "11px",
-                color: "#374151",
-                fontWeight: "bold",
-                marginBottom: "8px",
-                fontFamily: "Arial, sans-serif",
-                width: "100%",
-                lineHeight: "1.2",
-              }}
-            >
-              <FaMobileAlt
-                size={11}
-                style={{
-                  color: "#4B5563",
-                  flexShrink: 0,
-                  marginRight: "8px",
-                  alignSelf: "center",
-                }}
-              />
-              <RiWhatsappFill
-                size={11}
-                style={{
-                  color: "#4B5563",
-                  flexShrink: 0,
-                  marginRight: "8px",
-                  alignSelf: "center",
-                }}
-              />
-              <span
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  lineHeight: "1.2",
-                  alignSelf: "center",
-                }}
-              >
-                {user?.phone || "+65 9027 7225"}
-              </span>
-            </div>
-
-            {/* Secondary Phone Row */}
-            {user?.phone2 && (
+            {user?.phone && (
               <div
                 style={{
                   display: "flex",
@@ -199,7 +153,16 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                   lineHeight: "1.2",
                 }}
               >
-                <Phone
+                <FaMobileAlt
+                  size={11}
+                  style={{
+                    color: "#4B5563",
+                    flexShrink: 0,
+                    marginRight: "8px",
+                    alignSelf: "center",
+                  }}
+                />
+                <RiWhatsappFill
                   size={11}
                   style={{
                     color: "#4B5563",
@@ -218,10 +181,47 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                     alignSelf: "center",
                   }}
                 >
-                  {user.phone2}
+                  {user.phone}
                 </span>
               </div>
             )}
+
+            {/* Secondary Phone Row */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                fontSize: "11px",
+                color: "#374151",
+                fontWeight: "bold",
+                marginBottom: "8px",
+                fontFamily: "Arial, sans-serif",
+                width: "100%",
+                lineHeight: "1.2",
+              }}
+            >
+              <Phone
+                size={11}
+                style={{
+                  color: "#4B5563",
+                  flexShrink: 0,
+                  marginRight: "8px",
+                  alignSelf: "center",
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  lineHeight: "1.2",
+                  alignSelf: "center",
+                }}
+              >
+                {user?.phone2 || "+65 6714 6714"}
+              </span>
+            </div>
 
             {/* Address Row */}
             <div
