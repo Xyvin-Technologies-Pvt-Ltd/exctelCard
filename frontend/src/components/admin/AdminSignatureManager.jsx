@@ -2,14 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   getAllConfigsAdmin, 
-  deleteConfigAdmin
+  deleteConfigAdmin,
+  migrateAllTemplates
 } from "../../api/outlook-signature.api";
 import { getUsers } from "../../api/users";
 import { 
   Loader2, 
   Edit, 
   Trash2,
-  Eye
+  Eye,
+  RefreshCw
 } from "lucide-react";
 import SignaturePreviewModal from "./SignaturePreviewModal";
 
@@ -50,6 +52,14 @@ const AdminSignatureManager = () => {
     },
   });
 
+  // Migrate templates mutation
+  const migrateTemplatesMutation = useMutation({
+    mutationFn: migrateAllTemplates,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-signature-configs"] });
+    },
+  });
+
 
   const getUserEmail = (userId) => {
     const currentUsers = usersData?.users || [];
@@ -66,11 +76,26 @@ const AdminSignatureManager = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Outlook Signature Management</h2>
-          <p className="text-gray-600 mt-1">
-            View and manage email signatures for all users
-          </p>
+        <div className="mb-6 flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Outlook Signature Management</h2>
+            <p className="text-gray-600 mt-1">
+              View and manage email signatures for all users
+            </p>
+          </div>
+          <button
+            onClick={() => migrateTemplatesMutation.mutate()}
+            disabled={migrateTemplatesMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Update all signatures to hide empty fields"
+          >
+            {migrateTemplatesMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Fix Empty Fields
+          </button>
         </div>
 
         {/* User Signatures List */}

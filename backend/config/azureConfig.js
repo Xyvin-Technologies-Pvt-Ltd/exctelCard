@@ -18,7 +18,7 @@ const azureConfig = {
 };
 
 const redirectUri =
-  process.env.AZURE_REDIRECT_URI || "http://localhost:5000/api/auth/callback";
+  process.env.AZURE_REDIRECT_URI || `http://localhost:${process.env.PORT}/api/auth/callback`;
 const postLogoutRedirectUri =
   process.env.AZURE_POST_LOGOUT_REDIRECT_URI || "http://localhost:5173/login";
   const FRONTEND_URL =

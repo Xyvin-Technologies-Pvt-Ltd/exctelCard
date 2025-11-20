@@ -202,3 +202,19 @@ export const deleteConfigAdmin = async (id) => {
   }
 };
 
+/**
+ * Admin: Migrate all signature templates to new format with conditional blocks
+ */
+export const migrateAllTemplates = async () => {
+  try {
+    const response = await api.post("/outlook-signature/admin/migrate-templates");
+    toast.success(response.data.message || "Templates migrated successfully");
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to migrate templates";
+    toast.error(errorMessage);
+    throw error;
+  }
+};
+

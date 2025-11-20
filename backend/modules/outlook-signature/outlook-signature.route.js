@@ -6,11 +6,11 @@ const { authenticateToken, requireAdmin } = require("../../middlewares/auth.midd
 // Most routes require authentication
 router.use((req, res, next) => {
   // Skip auth for manifest and commands endpoints (Outlook needs public access)
-  if (req.path.startsWith('/manifest/') || 
-      req.path.startsWith('/commands/') ||
-      req.path === '/manifest-universal' ||
-      req.path === '/commands-universal' ||
-      req.path === '/commands-universal.js') {
+  if (req.path.startsWith('/manifest/') ||
+    req.path.startsWith('/commands/') ||
+    req.path === '/manifest-universal' ||
+    req.path === '/commands-universal' ||
+    req.path === '/commands-universal.js') {
     return next();
   }
   // Apply auth for all other routes
@@ -171,6 +171,13 @@ router.put("/admin/configs/:id", requireAdmin, outlookSignatureController.update
  * @access  Private (admin only)
  */
 router.delete("/admin/configs/:id", requireAdmin, outlookSignatureController.deleteConfigAdmin);
+
+/**
+ * @route   POST /api/outlook-signature/admin/migrate-templates
+ * @desc    Migrate all signature templates to new format with conditional blocks (admin only)
+ * @access  Private (admin only)
+ */
+router.post("/admin/migrate-templates", requireAdmin, outlookSignatureController.migrateAllTemplatesToNewFormat);
 
 module.exports = router;
 

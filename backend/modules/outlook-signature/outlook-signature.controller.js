@@ -7,7 +7,7 @@ const userService = require("../../services/userService");
  */
 function getBaseUrlWithHttps(req) {
   let baseUrl = process.env.BACKEND_URL;
-  
+
   if (!baseUrl) {
     // Check for proxy headers (X-Forwarded-Proto, X-Forwarded-Host)
     const protocol = req.get('x-forwarded-proto') || req.protocol;
@@ -15,13 +15,13 @@ function getBaseUrlWithHttps(req) {
     // Force HTTPS for Outlook (Microsoft requirement)
     baseUrl = `https://${host}`;
   }
-  
+
   // Ensure baseUrl uses HTTPS
   if (baseUrl.startsWith('http://')) {
     console.warn('⚠️  WARNING: Outlook requires HTTPS. Converting HTTP to HTTPS.');
     baseUrl = baseUrl.replace('http://', 'https://');
   }
-  
+
   return baseUrl;
 }
 
@@ -43,16 +43,16 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 <tr>
 <td valign="top" style="padding-right:20px;width:180px;font-family:'AktivGrotesk',Arial,sans-serif">
 <div style="font-weight:bold;color:#000;font-size:17px;margin-bottom:2px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%FirstName%% %%LastName%%</div>
-<div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>
+%%IF_TITLE%%<div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>%%ENDIF_TITLE%%
 <div style="margin-bottom:15px"><img src="https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/images/optimized/rev-6c1cac3/betasite.exctel.com/wp-content/uploads/2025/04/Exctel-Logo-FA.png" alt="Exctel" width="160" style="display:block;border:none;outline:none"></div>
 </td>
 <td valign="top" style="padding-left:20px;font-size:14px;color:#333;font-family:'AktivGrotesk',Arial,sans-serif">
 <table cellpadding="3" cellspacing="0" border="0" style="font-size:14px;font-family:'AktivGrotesk',Arial,sans-serif">
-<tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>
-<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>
+%%IF_EMAIL%%<tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>%%ENDIF_EMAIL%%
+%%IF_MOBILE%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>%%ENDIF_MOBILE%%
 %%IF_FAX%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Fax" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>%%ENDIF_FAX%%
-<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>
-<tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>
+%%IF_PHONE%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>%%ENDIF_PHONE%%
+%%IF_STREET%%<tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>%%ENDIF_STREET%%
 </table>
 </td>
 </tr></table>
@@ -77,7 +77,7 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
  */
 function replacePlaceholders(template, userProfile, placeholders = {}) {
   let html = template;
-  
+
   // Map user profile fields to placeholders
   const mapping = {
     '%%FirstName%%': userProfile.firstName || placeholders.FirstName || '',
@@ -101,21 +101,37 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     mapping['%%Email%%'] = insertZeroWidthSpaces(mapping['%%Email%%']);
   }
 
+  // Handle conditional blocks - only show rows if the field has data
+  const conditionalFields = {
+    'TITLE': userProfile.jobTitle || placeholders.Title || '',
+    'EMAIL': userProfile.mail || placeholders.Email || '',
+    'MOBILE': userProfile.mobilePhone || placeholders.MobileNumber || '',
+    'FAX': userProfile.faxNumber || placeholders.FaxNumber || '',
+    'PHONE': userProfile.phoneNumber || placeholders.PhoneNumber || '',
+    'STREET': userProfile.street || placeholders.Street || '',
+  };
+
+  // Process each conditional block
+  Object.keys(conditionalFields).forEach(field => {
+    const value = conditionalFields[field];
+    const ifPattern = `%%IF_${field}%%`;
+    const endifPattern = `%%ENDIF_${field}%%`;
+    const regex = new RegExp(`${ifPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([\\s\\S]*?)${endifPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+
+    if (value && value.trim() !== '') {
+      // Replace the conditional block with its content
+      html = html.replace(regex, '$1');
+    } else {
+      // Remove the conditional block entirely if field is empty
+      html = html.replace(regex, '');
+    }
+  });
+
   // Replace all placeholders
   Object.keys(mapping).forEach(placeholder => {
     const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
     html = html.replace(regex, mapping[placeholder]);
   });
-
-  // Handle conditional fax row - only show if faxNumber exists
-  const faxNumber = userProfile.faxNumber || placeholders.FaxNumber || '';
-  if (faxNumber && faxNumber.trim() !== '') {
-    // Replace the conditional block with the fax row
-    html = html.replace(/%%IF_FAX%%([\s\S]*?)%%ENDIF_FAX%%/g, '$1');
-  } else {
-    // Remove the conditional block if fax number doesn't exist
-    html = html.replace(/%%IF_FAX%%[\s\S]*?%%ENDIF_FAX%%/g, '');
-  }
 
   return html;
 }
@@ -130,7 +146,7 @@ class OutlookSignatureController {
   getAllConfigs = async (req, res) => {
     try {
       const userId = req.user?.id || req.user?.email || req.user?.oid;
-      
+
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -196,7 +212,7 @@ class OutlookSignatureController {
   createConfig = async (req, res) => {
     try {
       const userId = req.user?.id || req.user?.email || req.user?.oid;
-      
+
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -409,7 +425,7 @@ class OutlookSignatureController {
 
       // Generate manifest XML with auto-insert setting
       const manifestXml = generateManifestXML(autoInsert, commandsUrl);
-      
+
       // Generate JavaScript code with auto-insert setting
       const jsCode = generateJavaScriptCode(config, autoInsert);
 
@@ -451,7 +467,7 @@ class OutlookSignatureController {
       if (userId) {
         query.user_id = userId;
       }
-      
+
       const config = await OutlookSignature.findOne(query).lean();
 
       if (!config) {
@@ -460,7 +476,7 @@ class OutlookSignatureController {
           message: "Signature configuration not found",
         });
       }
-      
+
       // Use config's user_id if we don't have it from token
       const configUserId = userId || config.user_id;
 
@@ -510,7 +526,7 @@ class OutlookSignatureController {
       if (userId) {
         query.user_id = userId;
       }
-      
+
       const config = await OutlookSignature.findOne(query).lean();
 
       if (!config) {
@@ -519,7 +535,7 @@ class OutlookSignatureController {
           message: "Signature configuration not found",
         });
       }
-      
+
       // Use config's user_id if we don't have it from token
       const configUserId = userId || config.user_id;
 
@@ -607,7 +623,7 @@ ${jsCode}
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      
+
       // Get base URL with HTTPS enforced (Microsoft requirement)
       const baseUrl = getBaseUrlWithHttps(req);
       const commandsUrl = `${baseUrl}/api/outlook-signature/commands-universal`;
@@ -636,10 +652,10 @@ ${jsCode}
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      
+
       // Get base URL with HTTPS enforced (Microsoft requirement)
       const baseUrl = getBaseUrlWithHttps(req);
-      
+
       // Generate universal JavaScript code that fetches user's config dynamically
       const jsCode = generateUniversalJavaScriptCode(baseUrl);
 
@@ -681,10 +697,10 @@ ${jsCode}
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      
+
       // Get base URL with HTTPS enforced (Microsoft requirement)
       const baseUrl = getBaseUrlWithHttps(req);
-      
+
       // Generate universal JavaScript code that fetches user's config dynamically
       const jsCode = generateUniversalJavaScriptCode(baseUrl);
 
@@ -940,6 +956,50 @@ ${jsCode}
       });
     }
   };
+
+  /**
+   * Admin: Update all signature templates to new format with conditional blocks
+   */
+  migrateAllTemplatesToNewFormat = async (req, res) => {
+    try {
+      // Find all configs with the old template (without conditional blocks)
+      const configs = await OutlookSignature.find({});
+
+      let updatedCount = 0;
+      let skippedCount = 0;
+
+      for (const config of configs) {
+        // Check if template already has conditional blocks
+        if (config.html_template && !config.html_template.includes('%%IF_EMAIL%%')) {
+          // Update to new template
+          config.html_template = DEFAULT_HTML_TEMPLATE;
+          config.version += 1;
+          config.updated_by = req.user?.id || req.user?.email || req.user?.oid || "admin";
+          await config.save();
+          updatedCount++;
+        } else {
+          skippedCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Template migration completed. Updated: ${updatedCount}, Already up-to-date: ${skippedCount}`,
+        data: {
+          updated: updatedCount,
+          skipped: skippedCount,
+          total: configs.length
+        }
+      });
+    } catch (error) {
+      console.error("Migrate Templates Error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to migrate templates",
+        error: error.message,
+      });
+    }
+  };
 }
 
 /**
@@ -950,7 +1010,7 @@ ${jsCode}
 function generateManifestXML(autoInsert = true, commandsUrl = "https://localhost:3000/commands.html") {
   // Generate the JavaScript file URL (replace .html with .js or append .js)
   const commandsJsUrl = commandsUrl.replace(/\.html?$/, '') + '.js';
-  
+
   // Runtimes section (only if auto-insert enabled)
   const runtimesSection = autoInsert ? `
           <Runtimes>
@@ -1096,7 +1156,7 @@ function generateJavaScriptCode(config, autoInsert = true) {
   const escapeTemplateLiteral = (str) => {
     return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\${/g, '\\${');
   };
-  
+
   const escapedTemplate = escapeTemplateLiteral(config.html_template);
 
   return `// Office.js initialization
@@ -1295,7 +1355,7 @@ function insertSignatureButton() {
 function generateUniversalManifestXML(commandsUrl = "https://localhost:3000/commands-universal.html") {
   // Use a fixed GUID for the universal add-in (proper GUID format)
   const addinId = "12fa71f2-4574-4874-aa47-79f527e54347";
-  
+
   // Generate the JavaScript file URL (replace .html with .js or append .js)
   const commandsJsUrl = commandsUrl.replace(/\.html?$/, '') + '.js';
 

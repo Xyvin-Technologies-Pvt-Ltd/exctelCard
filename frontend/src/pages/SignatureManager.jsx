@@ -20,28 +20,40 @@ const generateShortSignature = (userProfile) => {
   if (!userProfile) return "";
 
   const parts = [];
-  
+
   // Name
-  const fullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
+  const fullName = `${userProfile.firstName || ""} ${
+    userProfile.lastName || ""
+  }`.trim();
   if (fullName) parts.push(fullName);
-  
-  // Job Title
-  if (userProfile.jobTitle) parts.push(userProfile.jobTitle);
-  
-  // Email with icon
-  if (userProfile.mail) {
-    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(userProfile.mail)}`;
+
+  // Job Title - only add if it exists
+  if (userProfile.jobTitle && userProfile.jobTitle.trim()) {
+    parts.push(userProfile.jobTitle);
+  }
+
+  // Email with icon - only add if it exists
+  if (userProfile.mail && userProfile.mail.trim()) {
+    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(
+      userProfile.mail
+    )}`;
     parts.push(emailPart);
   }
-  
-  // Landline (PhoneNumber) with icon
-  if (userProfile.phoneNumber) {
+
+  // Mobile Phone with icon - only add if it exists
+  if (userProfile.mobilePhone && userProfile.mobilePhone.trim()) {
+    const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.mobilePhone}`;
+    parts.push(mobilePart);
+  }
+
+  // Landline (PhoneNumber) with icon - only add if it exists
+  if (userProfile.phoneNumber && userProfile.phoneNumber.trim()) {
     const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.phoneNumber}`;
     parts.push(phonePart);
   }
 
   const shortSignatureText = parts.join(" | ");
-  
+
   if (!shortSignatureText) return "";
 
   // Return HTML with Outlook-compatible inline styles
@@ -59,16 +71,16 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
 <tr>
 <td valign="top" style="padding-right:20px;width:180px;font-family:'AktivGrotesk',Arial,sans-serif">
 <div style="font-weight:bold;color:#000;font-size:17px;margin-bottom:2px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%FirstName%% %%LastName%%</div>
-<div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>
+%%IF_TITLE%%<div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>%%ENDIF_TITLE%%
 <div style="margin-bottom:15px"><img src="https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/images/optimized/rev-6c1cac3/betasite.exctel.com/wp-content/uploads/2025/04/Exctel-Logo-FA.png" alt="Exctel" width="160" style="display:block;border:none;outline:none"></div>
     </td>
 <td valign="top" style="padding-left:20px;font-size:14px;color:#333;font-family:'AktivGrotesk',Arial,sans-serif">
 <table cellpadding="3" cellspacing="0" border="0" style="font-size:14px;font-family:'AktivGrotesk',Arial,sans-serif">
-<tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>
-<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>
+%%IF_EMAIL%%<tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>%%ENDIF_EMAIL%%
+%%IF_MOBILE%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>%%ENDIF_MOBILE%%
 %%IF_FAX%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Fax" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>%%ENDIF_FAX%%
-<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>
-<tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>
+%%IF_PHONE%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>%%ENDIF_PHONE%%
+%%IF_STREET%%<tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>%%ENDIF_STREET%%
     </table>
     </td>
     </tr></table>
@@ -101,7 +113,12 @@ const SignatureManager = () => {
   const [shortCopyState, setShortCopyState] = useState("idle");
 
   // Fetch fresh user profile from Graph API
-  const { data: graphProfileData, isLoading: isLoadingProfile, error: profileError, refetch: refetchProfile } = useQuery({
+  const {
+    data: graphProfileData,
+    isLoading: isLoadingProfile,
+    error: profileError,
+    refetch: refetchProfile,
+  } = useQuery({
     queryKey: ["user-profile-from-graph"],
     queryFn: getProfileFromGraph,
     retry: 1,
@@ -174,7 +191,7 @@ const SignatureManager = () => {
   // Generate preview when Graph API profile data is available
   useEffect(() => {
     if (isLoadingProfile) {
-        setIsLoading(true);
+      setIsLoading(true);
       return; // Wait for profile to load
     }
 
@@ -183,18 +200,23 @@ const SignatureManager = () => {
       const profile = profileData?.profile || authUser;
       if (profile) {
         const graphUser = {
-          givenName: profile.name?.split(' ')[0] || authUser?.name?.split(' ')[0] || '',
-          surname: profile.name?.split(' ').slice(1).join(' ') || authUser?.name?.split(' ').slice(1).join(' ') || '',
-          jobTitle: profile.jobTitle || authUser?.jobTitle || '',
-          mail: profile.email || authUser?.email || '',
-          mobilePhone: profile.phone || authUser?.phone || '',
-          businessPhones: profile.businessPhones || (profile.phone ? [profile.phone] : []),
-          streetAddress: profile.address || '',
-          city: profile.city || '',
-          state: profile.state || '',
-          postalCode: profile.postalCode || '',
-          country: profile.country || '',
-          department: profile.department || authUser?.department || '',
+          givenName:
+            profile.name?.split(" ")[0] || authUser?.name?.split(" ")[0] || "",
+          surname:
+            profile.name?.split(" ").slice(1).join(" ") ||
+            authUser?.name?.split(" ").slice(1).join(" ") ||
+            "",
+          jobTitle: profile.jobTitle || authUser?.jobTitle || "",
+          mail: profile.email || authUser?.email || "",
+          mobilePhone: profile.phone || authUser?.phone || "",
+          businessPhones:
+            profile.businessPhones || (profile.phone ? [profile.phone] : []),
+          streetAddress: profile.address || "",
+          city: profile.city || "",
+          state: profile.state || "",
+          postalCode: profile.postalCode || "",
+          country: profile.country || "",
+          department: profile.department || authUser?.department || "",
         };
 
         // Format address
@@ -204,7 +226,8 @@ const SignatureManager = () => {
         if (graphUser.state) addressParts.push(graphUser.state);
         if (graphUser.postalCode) addressParts.push(graphUser.postalCode);
         if (graphUser.country) addressParts.push(graphUser.country);
-        const formattedAddress = addressParts.length > 0 ? addressParts.join(", ") : "";
+        const formattedAddress =
+          addressParts.length > 0 ? addressParts.join(", ") : "";
 
         const mappedProfile = {
           firstName: graphUser.givenName || "",
@@ -214,9 +237,11 @@ const SignatureManager = () => {
           mail: graphUser.mail || "",
           mobilePhone: graphUser.mobilePhone || "",
           faxNumber: "",
-          phoneNumber: Array.isArray(graphUser.businessPhones) && graphUser.businessPhones.length > 0
-            ? graphUser.businessPhones[0]
-            : "",
+          phoneNumber:
+            Array.isArray(graphUser.businessPhones) &&
+            graphUser.businessPhones.length > 0
+              ? graphUser.businessPhones[0]
+              : "",
           street: formattedAddress,
           city: graphUser.city || "",
           state: graphUser.state || "",
@@ -226,15 +251,15 @@ const SignatureManager = () => {
         };
 
         setUserProfile(mappedProfile);
-      // Generate short signature
-      const shortSig = generateShortSignature(mappedProfile);
-      setShortSignatureHtml(shortSig);
-      
-      const previewData = {
-        html_template: DEFAULT_TEMPLATE,
-        user_profile: mappedProfile,
-      };
-      previewMutation.mutate(previewData);
+        // Generate short signature
+        const shortSig = generateShortSignature(mappedProfile);
+        setShortSignatureHtml(shortSig);
+
+        const previewData = {
+          html_template: DEFAULT_TEMPLATE,
+          user_profile: mappedProfile,
+        };
+        previewMutation.mutate(previewData);
       } else {
         setError(profileError.message || "Failed to load user profile");
         setIsLoading(false);
@@ -258,9 +283,10 @@ const SignatureManager = () => {
         mail: userProfile.mail || "",
         mobilePhone: userProfile.mobilePhone || "",
         // Phone number logic: only include PhoneNumber if both mobilePhone and businessPhones exist
-        phoneNumber: (userProfile.mobilePhone && userProfile.businessPhones?.length > 0)
-          ? (userProfile.businessPhones[0] || "")
-          : "",
+        phoneNumber:
+          userProfile.mobilePhone && userProfile.businessPhones?.length > 0
+            ? userProfile.businessPhones[0] || ""
+            : "",
         faxNumber: userProfile.faxNumber || "", // Only use actual fax number, no fallback
         street: userProfile.street || "",
         city: userProfile.city || "",
@@ -274,15 +300,15 @@ const SignatureManager = () => {
       // Generate short signature
       const shortSig = generateShortSignature(mappedProfile);
       setShortSignatureHtml(shortSig);
-        
-        // Generate preview with fetched data
-        const previewData = {
-          html_template: DEFAULT_TEMPLATE,
+
+      // Generate preview with fetched data
+      const previewData = {
+        html_template: DEFAULT_TEMPLATE,
         user_profile: mappedProfile,
-        };
-        
-        previewMutation.mutate(previewData);
-      }
+      };
+
+      previewMutation.mutate(previewData);
+    }
   }, [graphProfileData, isLoadingProfile, profileError, profileData, authUser]);
 
   // Handle refresh
@@ -325,39 +351,45 @@ const SignatureManager = () => {
       </div>
 
       <div className="w-full mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Header */}
-          <div className="px-6 py-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Outlook Signature Preview</h1>
-                <p className="text-slate-600 mt-1">
-                  Your personalized email signature preview
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleRefresh}
-                disabled={isLoading || isLoadingProfile || previewMutation.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                {(isLoading || isLoadingProfile || previewMutation.isPending) ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  Refresh
-                </button>
-              </div>
+        {/* Header */}
+        <div className="px-6 py-6 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">
+                Outlook Signature Preview
+              </h1>
+              <p className="text-slate-600 mt-1">
+                Your personalized email signature preview
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRefresh}
+                disabled={
+                  isLoading || isLoadingProfile || previewMutation.isPending
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isLoading || isLoadingProfile || previewMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Refresh
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Error Message */}
+        {/* Error Message */}
         {(error || profileError) && (
-            <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
+          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
               <span className="font-medium">
-                {profileError?.response?.data?.message || profileError?.message || error}
+                {profileError?.response?.data?.message ||
+                  profileError?.message ||
+                  error}
               </span>
             </div>
             {profileError && (
@@ -366,16 +398,18 @@ const SignatureManager = () => {
               </p>
             )}
           </div>
-          )}
+        )}
 
         {/* Preview Section */}
         <div className="px-6 py-6">
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Main Signature */}
             <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-6">
-              <SignaturePreview 
-                html={previewHtml} 
-                isLoading={isLoading || isLoadingProfile || previewMutation.isPending} 
+              <SignaturePreview
+                html={previewHtml}
+                isLoading={
+                  isLoading || isLoadingProfile || previewMutation.isPending
+                }
                 onCopy={previewHtml ? copySignatureToClipboard : undefined}
                 copyState={copyState}
               />
@@ -384,10 +418,16 @@ const SignatureManager = () => {
             {/* Short Signature */}
             {shortSignatureHtml && (
               <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-6">
-                <SignaturePreview 
-                  html={shortSignatureHtml} 
-                  isLoading={isLoading || isLoadingProfile || previewMutation.isPending} 
-                  onCopy={shortSignatureHtml ? copyShortSignatureToClipboard : undefined}
+                <SignaturePreview
+                  html={shortSignatureHtml}
+                  isLoading={
+                    isLoading || isLoadingProfile || previewMutation.isPending
+                  }
+                  onCopy={
+                    shortSignatureHtml
+                      ? copyShortSignatureToClipboard
+                      : undefined
+                  }
                   copyState={shortCopyState}
                   title="Short Signature"
                 />
@@ -401,4 +441,3 @@ const SignatureManager = () => {
 };
 
 export default SignatureManager;
-

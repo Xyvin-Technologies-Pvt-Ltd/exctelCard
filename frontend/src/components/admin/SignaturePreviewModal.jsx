@@ -22,17 +22,25 @@ const generateShortSignature = (userProfile) => {
   const fullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
   if (fullName) parts.push(fullName);
   
-  // Job Title
-  if (userProfile.jobTitle) parts.push(userProfile.jobTitle);
+  // Job Title - only add if it exists
+  if (userProfile.jobTitle && userProfile.jobTitle.trim()) {
+    parts.push(userProfile.jobTitle);
+  }
   
-  // Email with icon
-  if (userProfile.mail) {
+  // Email with icon - only add if it exists
+  if (userProfile.mail && userProfile.mail.trim()) {
     const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(userProfile.mail)}`;
     parts.push(emailPart);
   }
   
-  // Landline (PhoneNumber) with icon
-  if (userProfile.phoneNumber) {
+  // Mobile Phone with icon - only add if it exists
+  if (userProfile.mobilePhone && userProfile.mobilePhone.trim()) {
+    const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.mobilePhone}`;
+    parts.push(mobilePart);
+  }
+  
+  // Landline (PhoneNumber) with icon - only add if it exists
+  if (userProfile.phoneNumber && userProfile.phoneNumber.trim()) {
     const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.phoneNumber}`;
     parts.push(phonePart);
   }
