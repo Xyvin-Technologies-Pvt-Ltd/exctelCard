@@ -1,220 +1,194 @@
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import { createRoot } from "react-dom/client";
+import { pdf } from "@react-pdf/renderer";
 import React from "react";
-import BusinessCardPDFLayout from "../components/BusinessCardPDFLayout";
+import BusinessCardPDFDocument from "../components/BusinessCardPDFDocument";
 
 /**
- * Generate PDF business card using dedicated PDF layout component
+ * Convert image URL to base64 data URL
  */
-export const generateBusinessCardPDF = async (profile, shareUrl) => {
+const imageToBase64 = (url) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL("image/png");
+      resolve(dataUrl);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
+/**
+ * Generate icon images for PDF using the same Icons8 icons as email signature
+ */
+const generateIconImages = async () => {
+  // Use the same Icons8 URLs as in the email signature
+  const iconUrls = {
+    email: "https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000",
+    mobile: "https://img.icons8.com/?size=100&id=11471&format=png&color=000000",
+    phone: "https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000",
+    mapPin: "https://img.icons8.com/ios-filled/50/000000/marker.png",
+    globe: "https://img.icons8.com/ios-filled/50/000000/globe.png",
+  };
+  
+  const iconImages = {};
+  for (const [key, url] of Object.entries(iconUrls)) {
+    try {
+      iconImages[key] = await imageToBase64(url);
+    } catch (error) {
+      console.warn(`Failed to load ${key} icon from Icons8:`, error);
+      iconImages[key] = null;
+    }
+  }
+  
+  return iconImages;
+};
+
+/**
+ * Generate QR code as base64 image with logo
+ */
+const generateQRCodeImage = async (data, size = 70) => {
   try {
-    // Create a temporary container for rendering both sides
-    const tempContainer = document.createElement("div");
-    tempContainer.style.position = "absolute";
-    tempContainer.style.left = "-9999px";
-    tempContainer.style.top = "-9999px";
-    tempContainer.style.width = "540px"; // Wide enough for both cards + gap
-    tempContainer.style.height = "420px"; // Height + some padding
-    tempContainer.style.backgroundColor = "#ffffff";
-    document.body.appendChild(tempContainer);
-
-    // Create React root and render the PDF layout
-    const root = createRoot(tempContainer);
-
-    // Render both sides using the dedicated PDF layout component
-    root.render(
-      React.createElement(BusinessCardPDFLayout, {
-        user: {
-          name: profile.name,
-          title: profile.jobTitle,
-          email: profile.email,
-          phone: profile.phone,
-          phone2: profile.phone2,
-          address: profile.address,
-        },
-        qrCodeData: shareUrl || window.location.href,
-      })
-    );
-
-    // Wait for the component to render and images to load
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Generate canvas from the rendered layout
-    const canvas = await html2canvas(tempContainer, {
-      width: 540,
-      height: 420,
-      scale: 3, // Higher resolution for better quality
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-    });
-
-    // Create PDF document - landscape to fit both cards
-    const pdf = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a4", // Standard A4 paper
-    });
-
-    // Calculate dimensions to fit both cards nicely on A4
-    const imgData = canvas.toDataURL("image/png", 1.0);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    // Calculate scale to fit the image properly
-    const canvasAspectRatio = canvas.width / canvas.height;
-    const pdfAspectRatio = pdfWidth / pdfHeight;
-
-    let finalWidth, finalHeight;
-    if (canvasAspectRatio > pdfAspectRatio) {
-      // Canvas is wider relative to its height
-      finalWidth = pdfWidth - 20; // 10mm margin on each side
-      finalHeight = finalWidth / canvasAspectRatio;
-    } else {
-      // Canvas is taller relative to its width
-      finalHeight = pdfHeight - 20; // 10mm margin on top/bottom
-      finalWidth = finalHeight * canvasAspectRatio;
+    // Try to get QR code from backend API first (if shareId is available)
+    if (data.includes('/share/')) {
+      const shareIdMatch = data.match(/\/share\/([^/?]+)/);
+      if (shareIdMatch) {
+        try {
+          const response = await fetch(`/api/qrcode/share/${shareIdMatch[1]}`);
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data?.qrCode) {
+              return result.data.qrCode; // Already base64 data URL
+            }
+          }
+        } catch (apiError) {
+          console.warn("Backend QR code API failed, using client-side generation:", apiError);
+        }
+      }
     }
 
-    // Center the image
-    const x = (pdfWidth - finalWidth) / 2;
-    const y = (pdfHeight - finalHeight) / 2;
-
-    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
-
-    // Clean up temporary elements
-    root.unmount();
-    document.body.removeChild(tempContainer);
-
-    // Generate and download the PDF
-    const fileName = `${
-      profile.name?.toLowerCase().replace(/\s+/g, "_") || "business_card"
-    }_both_sides.pdf`;
-    pdf.save(fileName);
-
-    return true;
+    // Fallback: Generate QR code client-side
+    const QRCode = (await import("qrcode")).default;
+    const qrDataUrl = await QRCode.toDataURL(data, {
+      width: size,
+      margin: 1,
+      color: {
+        dark: "#443f3e",
+        light: "#FFFFFF",
+      },
+      errorCorrectionLevel: "H",
+    });
+    
+    // Add logo to QR code if possible
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = qrDataUrl;
+      });
+      
+      ctx.drawImage(img, 0, 0, size, size);
+      
+      // Try to add logo in center
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      try {
+        await new Promise((resolve, reject) => {
+          logoImg.onload = resolve;
+          logoImg.onerror = reject;
+          logoImg.src = "/logo.png";
+        });
+        
+        const logoSize = size * 0.3;
+        const logoX = (size - logoSize) / 2;
+        const logoY = (size - logoSize) / 2;
+        
+        // White background for logo
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(logoX - 2, logoY - 2, logoSize + 4, logoSize + 4);
+        
+        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+      } catch (logoError) {
+        console.warn("Could not add logo to QR code:", logoError);
+      }
+      
+      return canvas.toDataURL("image/png");
+    } catch (error) {
+      console.warn("Error adding logo to QR code, using plain QR:", error);
+      return qrDataUrl;
+    }
   } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw error;
+    console.error("Error generating QR code:", error);
+    return null;
   }
 };
 
 /**
- * Generate PDF with front and back on separate pages
+ * Generate PDF with front and back on separate pages using @react-pdf/renderer
  */
 export const generateBusinessCardPDFSeparatePages = async (
   profile,
   shareUrl
 ) => {
   try {
-    // Create a temporary container for rendering both sides
-    const tempContainer = document.createElement("div");
-    tempContainer.style.position = "absolute";
-    tempContainer.style.left = "-9999px";
-    tempContainer.style.top = "-9999px";
-    tempContainer.style.width = "540px";
-    tempContainer.style.height = "420px";
-    tempContainer.style.backgroundColor = "#ffffff";
-    document.body.appendChild(tempContainer);
-
-    // Create React root and render the PDF layout
-    const root = createRoot(tempContainer);
-    root.render(
-      React.createElement(BusinessCardPDFLayout, {
-        user: {
-          name: profile.name,
-          title: profile.jobTitle,
-          email: profile.email,
-          phone: profile.phone,
-          phone2: profile.phone2,
-          address: profile.address,
-        },
-        qrCodeData: shareUrl || window.location.href,
-      })
+    // Convert images to base64 for @react-pdf/renderer
+    const cardBackImage = await imageToBase64("/cardback.jpg").catch(() => null);
+    const cardFrontImage = await imageToBase64("/cardfront.jpg").catch(() => null);
+    
+    // Generate QR code as image
+    const qrCodeImage = await generateQRCodeImage(
+      shareUrl || window.location.href,
+      70
     );
 
-    // Wait for rendering
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Generate icon images
+    const iconImages = await generateIconImages();
 
-    // Generate canvas
-    const canvas = await html2canvas(tempContainer, {
-      width: 540,
-      height: 420,
-      scale: 3,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false,
+    // Create PDF document using @react-pdf/renderer
+    const doc = React.createElement(BusinessCardPDFDocument, {
+      user: {
+        name: profile.name,
+        title: profile.jobTitle,
+        email: profile.email,
+        phone: profile.phone,
+        phone2: profile.phone2,
+        address: profile.address,
+      },
+      qrCodeData: shareUrl || window.location.href,
+      cardBackImage: cardBackImage,
+      cardFrontImage: cardFrontImage,
+      qrCodeImage: qrCodeImage,
+      iconImages: iconImages,
     });
 
-    // Create PDF document
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: [53.98, 85.6], // Standard business card size
-    });
+    // Generate PDF blob
+    const blob = await pdf(doc).toBlob();
 
-    const imgData = canvas.toDataURL("image/png", 1.0);
-
-    // Extract front side (left half of the canvas)
-    const frontCanvas = document.createElement("canvas");
-    const frontCtx = frontCanvas.getContext("2d");
-    frontCanvas.width = canvas.width / 2;
-    frontCanvas.height = canvas.height;
-
-    const img = new Image();
-    img.onload = () => {
-      // Draw front side (left half)
-      frontCtx.drawImage(
-        img,
-        0,
-        0,
-        canvas.width / 2,
-        canvas.height,
-        0,
-        0,
-        frontCanvas.width,
-        frontCanvas.height
-      );
-      const frontImgData = frontCanvas.toDataURL("image/png", 1.0);
-      pdf.addImage(frontImgData, "PNG", 0, 0, 53.98, 85.6);
-
-      // Add new page for back side
-      pdf.addPage();
-
-      // Extract back side (right half of the canvas)
-      const backCanvas = document.createElement("canvas");
-      const backCtx = backCanvas.getContext("2d");
-      backCanvas.width = canvas.width / 2;
-      backCanvas.height = canvas.height;
-
-      backCtx.drawImage(
-        img,
-        canvas.width / 2,
-        0,
-        canvas.width / 2,
-        canvas.height,
-        0,
-        0,
-        backCanvas.width,
-        backCanvas.height
-      );
-      const backImgData = backCanvas.toDataURL("image/png", 1.0);
-      pdf.addImage(backImgData, "PNG", 0, 0, 53.98, 85.6);
-
-      // Clean up and save
-      root.unmount();
-      document.body.removeChild(tempContainer);
-
-      const fileName = `${
-        profile.name?.toLowerCase().replace(/\s+/g, "_") || "business_card"
-      }_separate_pages.pdf`;
-      pdf.save(fileName);
-    };
-
-    img.src = imgData;
+    // Download the PDF
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const fileName = `${
+      profile.name?.toLowerCase().replace(/\s+/g, "_") || "business_card"
+    }_separate_pages.pdf`;
+    
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     return true;
   } catch (error) {

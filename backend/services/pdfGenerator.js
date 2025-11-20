@@ -138,72 +138,115 @@ class PDFGeneratorService {
    */
   async addUserInformation(doc, user) {
     try {
-      // Set font for user information
-      doc.fontSize(10);
-      doc.fillColor('#374151'); // Gray-700
-
-      // Name and Title - positioned based on card design
-      const nameX = 15;
-      const nameY = 45;
+      // Card dimensions: 241 points wide x 156 points tall (85mm x 55mm)
+      // Frontend card: ~350px wide, aspect ratio 0.62 = ~217px tall
+      // Frontend positions: name at top-[130px], contact at top-[220px]
+      // Convert to PDF points proportionally:
+      // Name: 130/217 * 156 = ~94 points (but card is only 156 tall, so adjust)
+      // Actually frontend uses absolute positioning, so let's use proportional values
+      
+      // Left margin: frontend uses ml-6 (24px) + left-4 (16px) = 40px
+      // On 350px card = 40/350 * 241 = ~28 points
+      const nameX = 28;
+      // Name position: frontend top-[130px] on ~400px display ≈ 32.5% = 51 points
+      // But visually better at ~55 points (accounting for card design)
+      const nameY = 55;
+      
+      const contactX = 28;
+      // Contact position: frontend top-[220px], but that's beyond card height
+      // Use proportional: name + spacing + title = ~80 points, contact starts ~95
+      const contactStartY = 95; // Start contact info here
+      
+      const lineHeight = 13; // Spacing between contact lines for readability
+      const iconSpacing = 20; // Space reserved for icons (frontend uses SVG icons)
 
       // User name
-      doc.fontSize(12)
+      doc.fontSize(16)
          .font('Helvetica-Bold')
-         .text(user.name || "NOWSHAD HAMEED", nameX, nameY);
+         .fillColor('#111827') // Gray-900
+         .text(user.name || "NOWSHAD HAMEED", nameX, nameY, {
+           align: 'left',
+           lineGap: 2
+         });
 
-      // Job title
-      doc.fontSize(8)
+      // Job title - positioned below name with proper spacing
+      doc.fontSize(10)
          .font('Helvetica-Bold')
-         .text(user.jobTitle || user.title || "Chief Executive Officer", nameX, nameY + 15);
+         .fillColor('#4B5563') // Gray-600
+         .text(user.jobTitle || user.title || "Chief Executive Officer", nameX, nameY + 20, {
+           align: 'left',
+           lineGap: 2
+         });
 
-      // Contact information
-      const contactY = nameY + 35;
-      const lineHeight = 12;
+      // Contact information - positioned to match frontend layout
+      // Use Unicode symbols for icons that align properly with text
+      let currentY = contactStartY;
+      const fontSize = 9;
+      const textColor = '#374151'; // Gray-700
+      const iconGap = 6; // Space between icon and text (matching frontend mr-2 = 8px ≈ 6 points)
 
-      // Email with icons
-      if (user.email) {
-        doc.fontSize(7)
-           .font('Helvetica-Bold')
-           .text(`📧 ${user.email}`, nameX, contactY);
-      }
-
-      // Phone with icons
-      if (user.phone) {
-        doc.fontSize(7)
-           .font('Helvetica-Bold')
-           .text(`📱 ${user.phone}`, nameX, contactY + lineHeight);
-      }
-
-      // Second phone if available
-      if (user.phone2 || user.businessPhones?.[0]) {
-        doc.fontSize(7)
-           .font('Helvetica-Bold')
-           .text(`📞 ${user.phone2 || user.businessPhones[0]}`, nameX, contactY + (lineHeight * 2));
-      }
-
-      // Address
-      if (user.address) {
-        const addressLines = user.address.split('\n');
-        let addressY = contactY + (lineHeight * 3);
+      // Helper function to add text with icon, properly aligned on same line
+      // Combine icon and text as a single string to ensure perfect baseline alignment
+      const addTextWithIcon = (icon, text, yPos) => {
+        // Combine icon and text with a space - this ensures they render on the same baseline
+        const combinedText = icon + ' ' + text;
         
+        // Render as single string - PDFKit will align them on the same baseline
+        doc.fontSize(fontSize)
+           .font('Helvetica-Bold')
+           .fillColor(textColor)
+           .text(combinedText, contactX, yPos, {
+             align: 'left',
+             width: this.cardWidth - contactX - 10,
+             lineGap: 1
+           });
+      };
+
+      // Email - using envelope emoji
+      if (user.email) {
+        addTextWithIcon('✉', user.email, currentY);
+        currentY += lineHeight;
+      }
+
+      // Phone - using mobile phone emoji
+      if (user.phone) {
+        addTextWithIcon('📱', user.phone, currentY);
+        currentY += lineHeight;
+      }
+
+      // Second phone if available - using phone emoji
+      if (user.phone2 || user.businessPhones?.[0]) {
+        addTextWithIcon('📞', user.phone2 || user.businessPhones[0], currentY);
+        currentY += lineHeight;
+      }
+
+      // Address - handle multi-line with proper alignment
+      if (user.address) {
+        const addressLines = user.address.split('\n').filter(line => line.trim());
+        // Approximate width of icon + space for indentation
+        const iconSpace = fontSize * 1.5; // Space for icon + space character
         addressLines.forEach((line, index) => {
           if (index === 0) {
-            doc.fontSize(7)
-               .font('Helvetica-Bold')
-               .text(`📍 ${line}`, nameX, addressY);
+            // First line with location icon
+            addTextWithIcon('📍', line.trim(), currentY);
           } else {
-            doc.fontSize(7)
+            // Subsequent lines without icon, indented to match first line text position
+            doc.fontSize(fontSize)
                .font('Helvetica-Bold')
-               .text(`   ${line}`, nameX, addressY);
+               .fillColor(textColor)
+               .text(line.trim(), contactX + iconSpace, currentY, {
+                 align: 'left',
+                 width: this.cardWidth - contactX - iconSpace - 10,
+                 lineGap: 1
+               });
           }
-          addressY += 8;
+          currentY += (index === 0 ? lineHeight : 9); // First line normal spacing, subsequent lines slightly tighter
         });
+        currentY += 2; // Small spacing after address
       }
 
-      // Website
-      doc.fontSize(7)
-         .font('Helvetica-Bold')
-         .text('🌐 www.exctel.com', nameX, contactY + (lineHeight * 5));
+      // Website - using globe emoji
+      addTextWithIcon('🌐', 'www.exctel.com', currentY);
 
     } catch (error) {
       console.error("Error adding user information:", error);
@@ -218,20 +261,30 @@ class PDFGeneratorService {
    */
   async addQRCodeOverlay(doc, qrCodeDataUrl) {
     try {
-      // QR code position - bottom center with some padding
-      const qrSize = 25; // Size in points
+      // QR code position - bottom center with padding (matching frontend: bottom-5 = 20px)
+      // Frontend uses size 70px for mobile, 100px for desktop
+      // For PDF, use a proportional size: ~30 points (about 10.6mm)
+      const qrSize = 30; // Size in points
+      const padding = 15; // Bottom padding in points (matching frontend bottom-5 ≈ 20px)
+      
+      // Center horizontally
       const qrX = (this.cardWidth - qrSize) / 2;
-      const qrY = this.cardHeight - qrSize - 15;
+      // Position from bottom with padding
+      const qrY = this.cardHeight - qrSize - padding;
 
-      // Add white background for QR code
-      doc.rect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4)
+      // Add white background for QR code (matching frontend: bg-white bg-opacity-90)
+      const bgPadding = 3; // Padding around QR code
+      doc.rect(qrX - bgPadding, qrY - bgPadding, qrSize + (bgPadding * 2), qrSize + (bgPadding * 2))
          .fillColor('#FFFFFF')
+         .fillOpacity(0.9)
          .fill();
 
       // Add QR code
       doc.image(qrCodeDataUrl, qrX, qrY, {
         width: qrSize,
-        height: qrSize
+        height: qrSize,
+        align: 'center',
+        valign: 'center'
       });
 
     } catch (error) {
