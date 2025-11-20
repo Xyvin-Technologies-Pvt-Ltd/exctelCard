@@ -102,43 +102,36 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 fontWeight: "bold",
                 marginBottom: "8px",
                 fontFamily: "Arial, sans-serif",
-                minHeight: "18px",
                 width: "100%",
-                gap: "4px",
+                lineHeight: "1.2",
               }}
             >
-              <div
+              <Mail
+                size={11}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "3px",
+                  color: "#4B5563",
                   flexShrink: 0,
+                  marginRight: "8px",
+                  alignSelf: "center",
                 }}
-              >
-                <Mail
-                  size={11}
-                  style={{
-                    color: "#4B5563",
-                    flexShrink: 0,
-                  }}
-                />
-                <BsMicrosoftTeams
-                  size={11}
-                  style={{
-                    color: "#4B5563",
-                    flexShrink: 0,
-                  }}
-                />
-              </div>
+              />
+              <BsMicrosoftTeams
+                size={11}
+                style={{
+                  color: "#4B5563",
+                  flexShrink: 0,
+                  marginRight: "8px",
+                  alignSelf: "center",
+                }}
+              />
               <span
                 style={{
                   flex: 1,
                   minWidth: 0,
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  lineHeight: "1.6",
-                  paddingTop: "2px",
-                  paddingBottom: "2px",
+                  lineHeight: "1.2",
+                  alignSelf: "center",
                 }}
               >
                 {user?.email || "nowshad.hameed@exctel.com"}
@@ -155,43 +148,36 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 fontWeight: "bold",
                 marginBottom: "8px",
                 fontFamily: "Arial, sans-serif",
-                minHeight: "18px",
                 width: "100%",
-                gap: "4px",
+                lineHeight: "1.2",
               }}
             >
-              <div
+              <FaMobileAlt
+                size={11}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "3px",
+                  color: "#4B5563",
                   flexShrink: 0,
+                  marginRight: "8px",
+                  alignSelf: "center",
                 }}
-              >
-                <FaMobileAlt
-                  size={11}
-                  style={{
-                    color: "#4B5563",
-                    flexShrink: 0,
-                  }}
-                />
-                <RiWhatsappFill
-                  size={11}
-                  style={{
-                    color: "#4B5563",
-                    flexShrink: 0,
-                  }}
-                />
-              </div>
+              />
+              <RiWhatsappFill
+                size={11}
+                style={{
+                  color: "#4B5563",
+                  flexShrink: 0,
+                  marginRight: "8px",
+                  alignSelf: "center",
+                }}
+              />
               <span
                 style={{
                   flex: 1,
                   minWidth: 0,
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  lineHeight: "1.6",
-                  paddingTop: "2px",
-                  paddingBottom: "2px",
+                  lineHeight: "1.2",
+                  alignSelf: "center",
                 }}
               >
                 {user?.phone || "+65 9027 7225"}
@@ -209,36 +195,27 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                   fontWeight: "bold",
                   marginBottom: "8px",
                   fontFamily: "Arial, sans-serif",
-                  minHeight: "18px",
                   width: "100%",
-                  gap: "4px",
+                  lineHeight: "1.2",
                 }}
               >
-                <div
+                <Phone
+                  size={11}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    width: "28px",
+                    color: "#4B5563",
                     flexShrink: 0,
+                    marginRight: "8px",
+                    alignSelf: "center",
                   }}
-                >
-                  <Phone
-                    size={11}
-                    style={{
-                      color: "#4B5563",
-                      flexShrink: 0,
-                    }}
-                  />
-                </div>
+                />
                 <span
                   style={{
                     flex: 1,
                     minWidth: 0,
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
-                    lineHeight: "1.6",
-                    paddingTop: "2px",
-                    paddingBottom: "2px",
+                    lineHeight: "1.2",
+                    alignSelf: "center",
                   }}
                 >
                   {user.phone2}
@@ -257,26 +234,18 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 marginBottom: "8px",
                 fontFamily: "Arial, sans-serif",
                 width: "100%",
-                gap: "4px",
               }}
             >
-              <div
+              <MapPin
+                size={11}
                 style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  width: "28px",
+                  color: "#4B5563",
                   flexShrink: 0,
-                  paddingTop: "4px",
+                  marginRight: "8px",
+                  marginTop: "1px",
+                  alignSelf: "flex-start",
                 }}
-              >
-                <MapPin
-                  size={11}
-                  style={{
-                    color: "#4B5563",
-                    flexShrink: 0,
-                  }}
-                />
-              </div>
+              />
               <span
                 style={{
                   whiteSpace: "pre-line",
@@ -287,8 +256,7 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                   minWidth: 0,
                   wordBreak: "break-word",
                   hyphens: "auto",
-                  paddingTop: "2px",
-                  paddingBottom: "2px",
+                  alignSelf: "flex-start",
                 }}
               >
                 {user?.address ||
@@ -302,40 +270,30 @@ const BusinessCardPDFLayout = ({ user, qrCodeData }) => {
                 display: "flex",
                 alignItems: "center",
                 fontSize: "11px",
-                paddingTop: "2px",
                 color: "#374151",
                 fontWeight: "bold",
                 fontFamily: "Arial, sans-serif",
-                minHeight: "18px",
                 width: "100%",
-                gap: "4px",
+                lineHeight: "1.2",
               }}
             >
-              <div
+              <Globe
+                size={11}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "28px",
+                  color: "#4B5563",
                   flexShrink: 0,
+                  marginRight: "8px",
+                  alignSelf: "center",
                 }}
-              >
-                <Globe
-                  size={11}
-                  style={{
-                    color: "#4B5563",
-                    flexShrink: 0,
-                  }}
-                />
-              </div>
+              />
               <span
                 style={{
                   flex: 1,
                   minWidth: 0,
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  lineHeight: "1.6",
-                  paddingTop: "2px",
-                  paddingBottom: "2px",
+                  lineHeight: "1.2",
+                  alignSelf: "center",
                 }}
               >
                 www.exctel.com
