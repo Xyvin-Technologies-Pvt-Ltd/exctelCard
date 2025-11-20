@@ -109,7 +109,7 @@ const getUsers = async (req, res) => {
     const [users, count] = await Promise.all([
       User.find(query)
         .select(
-          "email shareId name jobTitle qrCode department profileImage phone lastActiveAt _id"
+          "email shareId name jobTitle qrCode department profileImage phone lastActiveAt _id entraId"
         )
         .sort({ name: 1 })
         .limit(limit * 1)

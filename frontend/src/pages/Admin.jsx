@@ -11,15 +11,26 @@ import {
   FaCheck,
   FaExclamationTriangle,
   FaSync,
+  FaTrash,
+  FaEllipsisV,
 } from "react-icons/fa";
 import ActivityViewPopup from "../components/ActivityViewPopup";
 import QRCodeWithLogo from "../components/QRCodeWithLogo";
 import AdminSignatureManager from "../components/admin/AdminSignatureManager";
-import { getUsers, getUserActivity, searchUsers } from "../api/users";
+import UserSelectionModal from "../components/admin/UserSelectionModal";
+import {
+  getUsers,
+  getUserActivity,
+  searchUsers,
+  removeUsersFromApp,
+} from "../api/users";
 import qrCodeBackgroundService from "../services/qrCodeBackgroundService";
 import { downloadQRBackEnd } from "../api/qrcode";
 import { autoSyncUsers } from "../api/auth";
-import { getAllConfigsAdmin, createConfigAdmin } from "../api/outlook-signature.api";
+import {
+  getAllConfigsAdmin,
+  createConfigAdmin,
+} from "../api/outlook-signature.api";
 
 const Admin = () => {
   // Query client for refetching
@@ -43,6 +54,13 @@ const Admin = () => {
   // State for popup visibility and selected user's activity data
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  // State for user selection modal
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  // State for delete confirmation
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // State for dropdown menu
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   // Refs for QR codes - create a map to store refs for each user
   const qrRefs = useRef({});
@@ -153,6 +171,53 @@ const Admin = () => {
     setIsPopupOpen(false);
     setSelectedActivity(null);
   };
+
+  // Handle delete user
+  const handleDeleteUser = async (user) => {
+    if (!user.entraId) {
+      toast.error("Cannot delete user: No Entra ID found");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to remove "${
+        user.name || user.email
+      }"?\n\nThis will:\n- Remove the user from the Enterprise Application\n- Delete the user from the local database\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setUserToDelete(user._id);
+    setIsDeleting(true);
+    try {
+      const response = await removeUsersFromApp([user.entraId]);
+
+      if (response.success) {
+        const { stats } = response.data;
+        if (stats.failed === 0) {
+          toast.success(
+            `User "${user.name || user.email}" has been removed successfully`
+          );
+        } else {
+          toast.success(
+            `User removal completed with some issues. Check details in console.`,
+            { duration: 5000 }
+          );
+        }
+
+        // Refetch users list
+        await queryClient.invalidateQueries({ queryKey: ["users"] });
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast.error(error.response?.data?.message || "Failed to remove user");
+    } finally {
+      setIsDeleting(false);
+      setUserToDelete(null);
+    }
+  };
   // Default HTML template - Outlook compatible with inline styles
   const DEFAULT_TEMPLATE = `<!--[if mso]>
 <style type="text/css">
@@ -196,13 +261,13 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
   const syncUsers = async () => {
     try {
       setIsSyncing(true);
-      
+
       // Step 1: Sync users from Azure AD
       await autoSyncUsers();
 
       // Step 2: Refetch users data
       await queryClient.invalidateQueries({ queryKey: ["users"] });
-      
+
       // Step 3: Fetch updated users list
       const updatedUsersResponse = await getUsers();
       const updatedUsers = updatedUsersResponse?.users || [];
@@ -212,14 +277,17 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
       const currentConfigs = configsResponse?.data || [];
 
       // Step 5: Identify users without signatures
-      const usersWithoutSignatures = updatedUsers.filter(user => {
+      const usersWithoutSignatures = updatedUsers.filter((user) => {
         const userEmail = user.email || user._id;
-        return !currentConfigs.some(config => config.user_id === userEmail || config.user_id === user._id);
+        return !currentConfigs.some(
+          (config) =>
+            config.user_id === userEmail || config.user_id === user._id
+        );
       });
 
       // Step 6: Create signatures for users who don't have them
       if (usersWithoutSignatures.length > 0) {
-        const createPromises = usersWithoutSignatures.map(user => {
+        const createPromises = usersWithoutSignatures.map((user) => {
           const userId = user.email || user._id;
           return createConfigAdmin({
             user_id: userId,
@@ -231,13 +299,19 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
         });
 
         await Promise.all(createPromises);
-        
+
         // Step 7: Invalidate signature configs query
-        await queryClient.invalidateQueries({ queryKey: ["admin-signature-configs"] });
-        
-        toast.success(`Users synced successfully. Created ${usersWithoutSignatures.length} signature(s) for users without them.`);
+        await queryClient.invalidateQueries({
+          queryKey: ["admin-signature-configs"],
+        });
+
+        toast.success(
+          `Users synced successfully. Created ${usersWithoutSignatures.length} signature(s) for users without them.`
+        );
       } else {
-        toast.success("Users synced successfully. All users already have signatures.");
+        toast.success(
+          "Users synced successfully. All users already have signatures."
+        );
       }
     } catch (error) {
       console.error(error);
@@ -274,18 +348,26 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
             Manage users and configure system settings
           </p>
         </div>
-        <button
-          className="bg-primary-500 text-white px-4 py-2 rounded-md flex items-center"
-          onClick={() => syncUsers()}
-          disabled={isSyncing}
-        >
-          {isSyncing ? (
-            <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <FaSync className="w-4 h-4 mr-2" />
-          )}
-          Sync Users
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center hover:bg-gray-50 transition-colors"
+            onClick={() => setIsUserModalOpen(true)}
+          >
+            Add Users
+          </button>
+          <button
+            className="bg-primary-500 text-white px-4 py-2 rounded-md flex items-center hover:bg-primary-600 transition-colors"
+            onClick={() => syncUsers()}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FaSync className="w-4 h-4 mr-2" />
+            )}
+            Sync Users
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -399,6 +481,12 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
                   >
                     Activity View
                   </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -485,9 +573,70 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
                         <button
                           onClick={() => openPopup(user._id)}
                           className="text-gray-500 hover:text-gray-700"
+                          title="View Activity"
                         >
                           <MdOutlineRemoveRedEye />
                         </button>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <div className="relative">
+                          {user.entraId ? (
+                            <>
+                              <button
+                                onClick={() =>
+                                  setOpenDropdown(
+                                    openDropdown === user._id ? null : user._id
+                                  )
+                                }
+                                className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded hover:bg-gray-100"
+                                title="More options"
+                                disabled={isDeleting}
+                              >
+                                <FaEllipsisV className="w-4 h-4" />
+                              </button>
+                              {openDropdown === user._id && (
+                                <>
+                                  {/* Backdrop to close dropdown */}
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenDropdown(null)}
+                                  ></div>
+                                  {/* Dropdown menu */}
+                                  <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-20">
+                                    <button
+                                      onClick={() => {
+                                        setOpenDropdown(null);
+                                        handleDeleteUser(user);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      disabled={isDeleting}
+                                    >
+                                      {isDeleting &&
+                                      userToDelete === user._id ? (
+                                        <>
+                                          <FaSpinner className="w-3 h-3 animate-spin" />
+                                          Deleting...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <FaTrash className="w-3 h-3" />
+                                          Delete
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <span
+                              className="text-gray-400 text-xs"
+                              title="User has no Entra ID"
+                            >
+                              N/A
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -499,9 +648,7 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
       )}
 
       {/* Outlook Signatures Tab */}
-      {activeTab === "signatures" && (
-        <AdminSignatureManager />
-      )}
+      {activeTab === "signatures" && <AdminSignatureManager />}
 
       {/* Activity View Popup */}
       <ActivityViewPopup
@@ -515,6 +662,16 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
             cardDownloads: 0,
           }
         }
+      />
+
+      {/* User Selection Modal */}
+      <UserSelectionModal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        onSuccess={() => {
+          // Refetch users list after successful assignment
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+        }}
       />
     </div>
   );

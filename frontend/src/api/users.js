@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 export const getUsers = async () => {
   try {
     const response = await api.get("/admin/users");
+    console.log(response.data);
     return response.data;
   } catch (error) {
     const errorMessage =
@@ -84,6 +85,70 @@ export const getUserProfileFromGraphAdmin = async (userId) => {
       error.response?.data?.message || "Failed to fetch user profile from Graph API";
     // Don't show toast for this - let the component handle it
     console.error(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * Get all users from Entra ID (Admin only)
+ * @param {string} searchQuery - Optional search query to filter users
+ * @param {string} skipToken - Optional pagination token
+ */
+export const getAllEntraUsers = async (searchQuery = "", skipToken = null) => {
+  try {
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      params.append("search", searchQuery);
+    }
+    if (skipToken) {
+      params.append("skipToken", skipToken);
+    }
+
+    const queryString = params.toString();
+    const url = `/auth/admin/entra-users/all${queryString ? `?${queryString}` : ""}`;
+
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to fetch Entra ID users";
+    toast.error(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * Assign users to Enterprise Application (Admin only)
+ * @param {string[]} userIds - Array of user principal IDs to assign
+ */
+export const assignUsersToApp = async (userIds) => {
+  try {
+    const response = await api.post("/auth/admin/entra-users/assign", {
+      userIds,
+    });
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to assign users";
+    toast.error(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * Remove users from Enterprise Application and local database (Admin only)
+ * @param {string[]} userIds - Array of user principal IDs to remove
+ */
+export const removeUsersFromApp = async (userIds) => {
+  try {
+    const response = await api.post("/auth/admin/entra-users/remove", {
+      userIds,
+    });
+    return response.data;
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message || "Failed to remove users";
+    toast.error(errorMessage);
     throw error;
   }
 };

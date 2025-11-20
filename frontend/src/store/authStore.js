@@ -107,7 +107,7 @@ export const useAuthStore = create(
       if (token) {
         set({
           token,
-          isAuthenticated: false, // Will be verified by ProtectedRoute
+          isAuthenticated: true, // Optimistically authenticate - will be verified by ProtectedRoute
           isInitialized: true,
         });
       } else {

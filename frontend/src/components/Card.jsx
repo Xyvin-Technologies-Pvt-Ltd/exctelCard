@@ -40,10 +40,10 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
             {/* Name and Title - positioned absolutely based on the card design */}
             <div className="absolute top-[130px] left-4">
               <h2 className="text-lg md:text-xl font-aktiv-bold text-gray-900 font-aktiv">
-                {user?.name || "NOWSHAD HAMEED"}
+                {user?.name || "-"}
               </h2>
               <p className="text-xs md:text-sm text-gray-600 font-aktiv-bold">
-                {user?.title || "Chief Executive Officer"}
+                {user?.title || "-"}
               </p>
             </div>
 
@@ -55,7 +55,7 @@ const Card = ({ user, qrCodeData, isFlippable, initialFlipState = false }) => {
                   size={12}
                   className="mr-2 text-gray-600 flex-shrink-0"
                 />
-                <span>{user?.email || "nowshad.hameed@exctel.com"}</span>
+                  <span>{user?.email || "-"}</span>
               </div>
               <div className="flex items-center text-xs md:text-sm text-gray-700 font-aktiv-bold">
                 <FaMobileAlt

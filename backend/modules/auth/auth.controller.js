@@ -10,6 +10,7 @@ const {
 } = require("../../config/azureConfig");
 const User = require("../users/user.model");
 const UserActivity = require("../users/userActivity.model");
+const { OutlookSignature } = require("../outlook-signature/outlook-signature.model");
 const bcrypt = require("bcrypt");
 const qrCodeService = require("../../services/qrCodeService");
 const errorHandler = require("../../services/errorHandler");
@@ -100,8 +101,7 @@ const handleCallback = async (req, res) => {
     if (error) {
       console.error("❌ OAuth error:", error, error_description);
       return res.redirect(
-        `${
-          FRONTEND_URL || "http://localhost:5173"
+        `${FRONTEND_URL || "http://localhost:5173"
         }/login?error=${encodeURIComponent(error_description || error)}`
       );
     }
@@ -149,8 +149,7 @@ const handleCallback = async (req, res) => {
 
     if (!code) {
       return res.redirect(
-        `${
-          FRONTEND_URL || "http://localhost:5173"
+        `${FRONTEND_URL || "http://localhost:5173"
         }/login?error=no_authorization_code`
       );
     }
@@ -284,8 +283,7 @@ const handleCallback = async (req, res) => {
   } catch (error) {
     console.error("Error handling callback:", error);
     res.redirect(
-      `${
-        FRONTEND_URL || "http://localhost:5173"
+      `${FRONTEND_URL || "http://localhost:5173"
       }/login?error=authentication_failed`
     );
   }
@@ -334,11 +332,10 @@ const logout = async (req, res) => {
     }
 
     // Generate logout URL
-    const logoutUrl = `https://login.microsoftonline.com/${
-      process.env.AZURE_TENANT_ID
-    }/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(
-      postLogoutRedirectUri
-    )}`;
+    const logoutUrl = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID
+      }/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(
+        postLogoutRedirectUri
+      )}`;
 
     res.json({
       success: true,
@@ -547,7 +544,7 @@ async function fetchUserPhoto(principalId, token) {
     // Convert image to base64
     const base64Image = Buffer.from(photoResponse.data, 'binary').toString('base64');
     const contentType = photoResponse.headers['content-type'] || 'image/jpeg';
-    
+
     return `data:${contentType};base64,${base64Image}`;
   } catch (photoError) {
     if (photoError.response?.status === 404) {
@@ -722,7 +719,7 @@ const syncUserFromGraph = async (graphUser, tenantId) => {
  */
 async function autoSyncUsers(req, res) {
   let token;
-  
+
   try {
     token = await getGraphAccessToken();
   } catch (tokenError) {
@@ -749,10 +746,10 @@ async function autoSyncUsers(req, res) {
   let url = `https://graph.microsoft.com/v1.0/servicePrincipals/${process.env.SERVICE_PRINCIPAL_ID}/appRoleAssignedTo?$top=999`;
 
   const processedAzureIds = new Set();
-  const stats = { 
-    created: 0, 
-    updated: 0, 
-    deleted: 0, 
+  const stats = {
+    created: 0,
+    updated: 0,
+    deleted: 0,
     errors: 0,
     skipped: 0,
     totalAssignments: 0
@@ -808,8 +805,8 @@ async function autoSyncUsers(req, res) {
             stats.skipped++;
             continue;
           }// Fetch the actual photo
-console.log(`📸 Fetching profile photo...`);
-const profileImageData = await fetchUserPhoto(principalId, token);
+          console.log(`📸 Fetching profile photo...`);
+          const profileImageData = await fetchUserPhoto(principalId, token);
 
           console.log(`📧 Email: ${userEmail} , Entra ID: ${principalId}`);
           processedAzureIds.add(principalId);
@@ -936,15 +933,9 @@ const profileImageData = await fetchUserPhoto(principalId, token);
       url = response.data["@odata.nextLink"] || null;
     }
 
-    // 🗑️ Delete users who are no longer assigned to the app
-    console.log("🧹 Cleaning up unassigned users...");
-    const deleteResult = await User.deleteMany({
-      entraId: { $exists: true, $nin: Array.from(processedAzureIds) },
-      loginType: "sso",
-    });
-
-    stats.deleted = deleteResult.deletedCount;
-    console.log(`🗑️ Deleted ${stats.deleted} unassigned users`);
+    // Note: Auto-delete logic removed to allow manual user management
+    // Users are no longer automatically deleted when unassigned from the Enterprise Application
+    stats.deleted = 0;
 
     // Record sync activity
     await UserActivity.create({
@@ -1056,6 +1047,809 @@ const getSyncStatus = async (req, res) => {
   }
 };
 
+/**
+ * Helper function to extract skip token from nextLink
+ */
+const extractSkipToken = (nextLink) => {
+  try {
+    const url = new URL(nextLink);
+    return url.searchParams.get("$skiptoken");
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
+ * Get all users from Entra ID tenant (not just assigned ones)
+ * Supports search and pagination
+ */
+const getAllEntraUsers = async (req, res) => {
+  let token;
+
+  try {
+    token = await getGraphAccessToken();
+  } catch (tokenError) {
+    console.error("❌ Failed to get access token:", tokenError.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to authenticate with Microsoft Graph API",
+      error: tokenError.message,
+    });
+  }
+
+  try {
+    const { search, skipToken } = req.query;
+    const searchQuery = search || "";
+
+    // Build Graph API URL
+    let url = `https://graph.microsoft.com/v1.0/users?$top=999&$select=id,displayName,mail,userPrincipalName,jobTitle,department,accountEnabled`;
+
+    // Add search filter if provided
+    if (searchQuery) {
+      const encodedSearch = encodeURIComponent(searchQuery);
+      url += `&$filter=startswith(displayName,'${encodedSearch}') or startswith(mail,'${encodedSearch}') or startswith(userPrincipalName,'${encodedSearch}')`;
+    }
+
+    // Add pagination token if provided
+    if (skipToken) {
+      url += `&$skiptoken=${encodeURIComponent(skipToken)}`;
+    }
+
+    console.log("🌐 Fetching all Entra ID users:", url);
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const graphUsers = response.data.value || [];
+    const nextLink = response.data["@odata.nextLink"] || null;
+    const nextSkipToken = nextLink ? extractSkipToken(nextLink) : null;
+
+    // Get list of assigned user IDs from local database
+    const assignedUsers = await User.find({
+      entraId: { $exists: true, $ne: null },
+      isActive: true
+    }).select("entraId email");
+
+    const assignedIds = new Set(assignedUsers.map(u => u.entraId));
+    const assignedEmails = new Set(assignedUsers.map(u => u.email?.toLowerCase()));
+
+    // Map Graph users with assignment status
+    const users = graphUsers.map((user) => {
+      const email = (user.mail || user.userPrincipalName || "").toLowerCase();
+      const isAssigned = assignedIds.has(user.id) || assignedEmails.has(email);
+
+      return {
+        id: user.id,
+        displayName: user.displayName || "Unknown",
+        email: user.mail || user.userPrincipalName || "",
+        jobTitle: user.jobTitle || "",
+        department: user.department || "",
+        accountEnabled: user.accountEnabled !== false,
+        isAssigned: isAssigned,
+      };
+    });
+
+    console.log(`✅ Retrieved ${users.length} users from Entra ID`);
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        nextSkipToken,
+        total: users.length,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching Entra ID users:", error);
+
+    if (error.response) {
+      console.error("Graph API Error:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch Entra ID users",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Assign users to Enterprise Application
+ * Accepts array of user IDs (principalIds) and assigns them to the app
+ */
+const assignUsersToApp = async (req, res) => {
+  let token;
+
+  try {
+    token = await getGraphAccessToken();
+  } catch (tokenError) {
+    console.error("❌ Failed to get access token:", tokenError.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to authenticate with Microsoft Graph API",
+      error: tokenError.message,
+    });
+  }
+
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "userIds array is required and must not be empty",
+      });
+    }
+
+    if (!process.env.SERVICE_PRINCIPAL_ID) {
+      return res.status(500).json({
+        success: false,
+        message: "SERVICE_PRINCIPAL_ID environment variable is missing",
+      });
+    }
+
+    const servicePrincipalId = process.env.SERVICE_PRINCIPAL_ID;
+    const results = [];
+    const stats = {
+      assigned: 0,
+      alreadyAssigned: 0,
+      failed: 0,
+      synced: 0,
+    };
+
+    console.log(`🔄 Assigning ${userIds.length} users to Enterprise Application...`);
+
+    // Process each user
+    for (const userId of userIds) {
+      try {
+        // First, check if user is already assigned to this service principal
+        // Check user's appRoleAssignments and filter by resourceId
+        const checkUrl = `https://graph.microsoft.com/v1.0/users/${userId}/appRoleAssignments?$filter=resourceId eq ${servicePrincipalId}`;
+
+        const checkResponse = await axios.get(checkUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const existingAssignments = checkResponse.data.value || [];
+
+        if (existingAssignments.length > 0) {
+          console.log(`⏭️ User ${userId} is already assigned`);
+          stats.alreadyAssigned++;
+          results.push({
+            userId,
+            status: "already_assigned",
+            message: "User is already assigned to the application",
+          });
+
+          // Still sync the user to local database
+          await syncUserById(userId, token, servicePrincipalId);
+          stats.synced++;
+          continue;
+        }
+
+        // Get the app role ID from existing assignments or service principal
+        // First, try to get an existing assignment to see what appRoleId is used
+        let appRoleId = null;
+
+        try {
+          // Get existing assignments to see what appRoleId they use
+          const existingAssignmentsUrl = `https://graph.microsoft.com/v1.0/servicePrincipals/${servicePrincipalId}/appRoleAssignedTo?$top=1`;
+          const existingResponse = await axios.get(existingAssignmentsUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (existingResponse.data.value && existingResponse.data.value.length > 0) {
+            appRoleId = existingResponse.data.value[0].appRoleId;
+            console.log(`📋 Found existing appRoleId from assignments: ${appRoleId}`);
+          }
+        } catch (err) {
+          console.log(`⚠️ Could not fetch existing assignments: ${err.message}`);
+        }
+
+        // If no existing assignment found, get from service principal app roles
+        if (!appRoleId) {
+          const spResponse = await axios.get(
+            `https://graph.microsoft.com/v1.0/servicePrincipals/${servicePrincipalId}?$select=appRoles`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const appRoles = spResponse.data.appRoles || [];
+
+          if (appRoles.length > 0) {
+            // Try to find a role with value "User" or use the first available role
+            const userRole = appRoles.find(role =>
+              role.value === "User" ||
+              role.value === "user" ||
+              role.displayName === "User" ||
+              role.allowedMemberTypes?.includes("User")
+            );
+            appRoleId = userRole ? userRole.id : appRoles[0].id;
+            console.log(`📋 Using appRoleId from service principal: ${appRoleId}`);
+          } else {
+            // Fallback to default role ID
+            appRoleId = "00000000-0000-0000-0000-000000000000";
+            console.log(`📋 Using default appRoleId: ${appRoleId}`);
+          }
+        }
+
+        // Assign user to Enterprise Application
+        // Use the user's appRoleAssignments endpoint instead of service principal's appRoleAssignedTo
+        const assignUrl = `https://graph.microsoft.com/v1.0/users/${userId}/appRoleAssignments`;
+        const assignPayload = {
+          principalId: userId,
+          resourceId: servicePrincipalId,
+          appRoleId: appRoleId,
+        };
+
+        console.log(`📤 Assignment URL: ${assignUrl}`);
+        console.log(`📤 Assignment payload:`, JSON.stringify(assignPayload, null, 2));
+
+        await axios.post(assignUrl, assignPayload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log(`✅ Assigned user ${userId} to Enterprise Application`);
+        stats.assigned++;
+        results.push({
+          userId,
+          status: "assigned",
+          message: "User successfully assigned to the application",
+        });
+
+        // Sync user to local database
+        const syncResult = await syncUserById(userId, token, servicePrincipalId);
+        stats.synced++;
+
+        // Create signature if user was newly created
+        if (syncResult && syncResult.action === "created") {
+          try {
+            const user = await User.findOne({ entraId: userId });
+            if (user) {
+              await createSignatureForUser(user);
+              console.log(`✅ Signature created for newly assigned user ${userId}`);
+            }
+          } catch (sigError) {
+            console.error(`⚠️ Failed to create signature for user ${userId}:`, sigError.message);
+          }
+        }
+
+      } catch (userError) {
+        // Log detailed error information
+        console.error(`❌ Error assigning user ${userId}:`, {
+          message: userError.message,
+          status: userError.response?.status,
+          statusText: userError.response?.statusText,
+          errorData: userError.response?.data,
+        });
+
+        const errorMessage = userError.response?.data?.error?.message || userError.message;
+
+        // Handle "already assigned" error gracefully
+        if (userError.response?.status === 400) {
+          const errorLower = errorMessage.toLowerCase();
+          if (errorLower.includes("already exists") ||
+            errorLower.includes("already assigned") ||
+            errorLower.includes("duplicate")) {
+            stats.alreadyAssigned++;
+            results.push({
+              userId,
+              status: "already_assigned",
+              message: "User is already assigned to the application",
+            });
+
+            // Still try to sync
+            try {
+              const syncResult = await syncUserById(userId, token, servicePrincipalId);
+              stats.synced++;
+
+              // Create signature if user was newly created
+              if (syncResult && syncResult.action === "created") {
+                try {
+                  const user = await User.findOne({ entraId: userId });
+                  if (user) {
+                    await createSignatureForUser(user);
+                    console.log(`✅ Signature created for already-assigned user ${userId}`);
+                  }
+                } catch (sigError) {
+                  console.error(`⚠️ Failed to create signature for user ${userId}:`, sigError.message);
+                }
+              }
+            } catch (syncError) {
+              console.error(`⚠️ Failed to sync already-assigned user ${userId}:`, syncError.message);
+            }
+            continue;
+          }
+        }
+
+        // For other errors, mark as failed
+        stats.failed++;
+        results.push({
+          userId,
+          status: "failed",
+          message: errorMessage,
+        });
+      }
+    }
+
+    // Record activity
+    const userId = req.user?.userId;
+    await UserActivity.create({
+      action: "assign_users",
+      userId: userId,
+      activityType: "admin_action",
+      metadata: {
+        action: "assign_users_to_app",
+        summary: `Assigned ${stats.assigned} users, ${stats.alreadyAssigned} already assigned, ${stats.failed} failed`,
+        stats: stats,
+      },
+      status: stats.failed === 0 ? "success" : "partial_success",
+      details: JSON.stringify(results),
+    });
+
+    console.log(`✅ Assignment complete:`, stats);
+
+    res.json({
+      success: true,
+      message: "User assignment completed",
+      data: {
+        results,
+        stats,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error assigning users:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to assign users",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Helper function to create signature configuration for a user
+ */
+const createSignatureForUser = async (user) => {
+  try {
+    // Check if signature already exists
+    const existingSignature = await OutlookSignature.findOne({
+      $or: [
+        { user_id: user.email },
+        { user_id: user._id.toString() }
+      ]
+    });
+
+    if (existingSignature) {
+      console.log(`⏭️ Signature already exists for user ${user.email}`);
+      return existingSignature;
+    }
+
+    // Default HTML template (same as in outlook-signature.controller.js)
+    const DEFAULT_HTML_TEMPLATE = `<!--[if mso]>
+<style type="text/css">
+@font-face{font-family:"AktivGrotesk";src:url("https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/static/source/rev-0cb01a5/betasite.exctel.com/wp-content/uploads/2025/03/AktivGrotesk-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
+body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
+</style>
+<![endif]-->
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:15px;line-height:1.4;color:#333;width:600px;margin:0;padding:0">
+<tr>
+<td valign="top" style="padding-right:20px;width:180px;font-family:'AktivGrotesk',Arial,sans-serif">
+<div style="font-weight:bold;color:#000;font-size:17px;margin-bottom:2px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%FirstName%% %%LastName%%</div>
+<div style="color:#000;font-size:16px;margin-bottom:15px;font-family:'AktivGrotesk',Arial,sans-serif;line-height:1.2">%%Title%%</div>
+<div style="margin-bottom:15px"><img src="https://cdn-ileaolp.nitrocdn.com/XyERqqlzUUUQQwlWmuaJLVHDbQgsqGcu/assets/images/optimized/rev-6c1cac3/betasite.exctel.com/wp-content/uploads/2025/04/Exctel-Logo-FA.png" alt="Exctel" width="160" style="display:block;border:none;outline:none"></div>
+</td>
+<td valign="top" style="padding-left:20px;font-size:14px;color:#333;font-family:'AktivGrotesk',Arial,sans-serif">
+<table cellpadding="3" cellspacing="0" border="0" style="font-size:14px;font-family:'AktivGrotesk',Arial,sans-serif">
+<tr><td style="width:20px;padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Email%%</td></tr>
+<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%MobileNumber%%</td></tr>
+%%IF_FAX%%<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Fax" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%FaxNumber%%</td></tr>%%ENDIF_FAX%%
+<tr><td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="14" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%PhoneNumber%%</td></tr>
+<tr><td style="padding-right:8px;vertical-align:top;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/marker.png" alt="Address" width="12" height="14" style="display:block;border:none;outline:none"></td><td style="font-family:'AktivGrotesk',Arial,sans-serif;color:#333">%%Street%%</td></tr>
+</table>
+</td>
+</tr></table>
+<table width="600" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:2px solid #ff8331;line-height:0;font-size:0;margin:2px;padding:0">&nbsp;</td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:14px;width:500px;margin-top:10px">
+<tr><td style="width:180px;padding-right:20px;font-family:'AktivGrotesk',Arial,sans-serif"><span style="color:#000;font-weight:bold;font-family:'AktivGrotesk',Arial,sans-serif">w&#8203;w&#8203;w&#8203;.&#8203;exctel&#8203;.&#8203;com</span></td>
+<td style="padding-left:20px;font-family:'AktivGrotesk',Arial,sans-serif">
+<table cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/linkedin.png" width="20" height="20" alt="LinkedIn" style="display:block;border:none;outline:none"></td>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://www.freeiconspng.com/uploads/new-x-twitter-logo-png-photo-1.png" width="20" height="20" alt="X" style="display:block;border:none;outline:none"></td>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/facebook-new.png" width="20" height="20" alt="Facebook" style="display:block;border:none;outline:none"></td>
+<td style="padding-right:8px;font-family:'AktivGrotesk',Arial,sans-serif"><img src="https://img.icons8.com/ios-filled/50/000000/instagram-new.png" width="20" height="20" alt="Instagram" style="display:block;border:none;outline:none"></td>
+</tr></table>
+</td></tr></table>
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:9px;line-height:1.4;color:#333;width:600px;margin-top:10px">
+<tr><td style="padding-top:10px;font-style:italic;color:#555;text-align:justify;font-family:'AktivGrotesk',Arial,sans-serif">
+    This email and any attachments are confidential and intended solely for the use of the individual or entity to whom they are addressed. If you are not the intended recipient, please delete this message, notify the sender immediately, and note that any review, use, disclosure, or distribution of its contents is strictly prohibited. We accept no liability for any errors, delays, or security issues that may arise during the transmission of this email.
+</td></tr></table>`;
+
+    // Create signature configuration
+    const signatureConfig = new OutlookSignature({
+      signature_name: `${user.name || user.email}'s Signature`,
+      user_id: user.email, // Use email as user_id
+      html_template: DEFAULT_HTML_TEMPLATE,
+      placeholders: {},
+      user_profile: {},
+      description: "Auto-generated during user assignment",
+      is_active: true,
+      created_by: "auto_sync",
+      updated_by: "auto_sync",
+    });
+
+    await signatureConfig.save();
+    return signatureConfig;
+  } catch (error) {
+    console.error(`❌ Error creating signature for user ${user.email}:`, error.message);
+    throw error;
+  }
+};
+
+/**
+ * Helper function to sync a single user by ID to local database
+ */
+const syncUserById = async (principalId, token, servicePrincipalId) => {
+  try {
+    // Fetch full user details from Graph API
+    const userResponse = await axios.get(
+      `https://graph.microsoft.com/v1.0/users/${principalId}?$select=id,displayName,mail,userPrincipalName,jobTitle,department,mobilePhone,businessPhones,faxNumber,streetAddress,city,country,postalCode,state,countryOrRegion,accountEnabled`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const graphUser = userResponse.data;
+    const userEmail = graphUser.mail || graphUser.userPrincipalName;
+
+    if (!userEmail) {
+      console.warn(`⚠️ User ${principalId} has no email, skipping sync`);
+      return null;
+    }
+
+    // Fetch profile photo
+    const profileImageData = await fetchUserPhoto(principalId, token);
+
+    // Check if user exists in database
+    let existingUser = await User.findOne({
+      $or: [
+        { entraId: principalId },
+        { email: userEmail.toLowerCase() }
+      ]
+    });
+
+    if (!existingUser) {
+      // Create new user
+      console.log(`🆕 Creating new user: ${userEmail}`);
+
+      const newUser = await User.create({
+        entraId: principalId,
+        email: userEmail.toLowerCase(),
+        name: graphUser.displayName || "Unknown User",
+        jobTitle: graphUser.jobTitle || "",
+        department: graphUser.department || "",
+        address: graphUser.streetAddress || "",
+        city: graphUser.city || "",
+        state: graphUser.state || "",
+        country: graphUser.countryOrRegion || "",
+        profileImage: profileImageData || "",
+        postalCode: graphUser.postalCode || "",
+        phone: graphUser.mobilePhone || null,
+        businessPhones: graphUser.businessPhones || [],
+        isActive: graphUser.accountEnabled !== false,
+        isEmailVerified: true,
+        loginType: "sso",
+        createdBy: "manual_add",
+        tenantId: process.env.AZURE_TENANT_ID,
+        lastActiveAt: new Date(),
+      });
+
+      // Generate QR code for new user
+      try {
+        if (newUser.shareId && typeof qrCodeService !== 'undefined') {
+          await qrCodeService.generateAndSaveQRCode(
+            newUser,
+            process.env.FRONTEND_URL || "http://localhost:5173",
+            { size: 200, logoSize: 45 }
+          );
+          console.log(`✅ QR code generated for: ${userEmail}`);
+        }
+      } catch (qrError) {
+        console.error(`⚠️ QR generation failed for ${userEmail}:`, qrError.message);
+      }
+
+      // Create signature configuration for new user
+      try {
+        await createSignatureForUser(newUser);
+        console.log(`✅ Signature configuration created for: ${userEmail}`);
+      } catch (sigError) {
+        console.error(`⚠️ Signature creation failed for ${userEmail}:`, sigError.message);
+        // Don't fail the whole operation if signature creation fails
+      }
+
+      return { action: "created", user: newUser._id, email: userEmail };
+    } else {
+      // Update existing user
+      const updatedFields = {};
+
+      if (existingUser.name !== graphUser.displayName) {
+        updatedFields.name = graphUser.displayName;
+      }
+      if (existingUser.profileImage !== profileImageData && profileImageData) {
+        updatedFields.profileImage = profileImageData;
+      }
+      if (existingUser.email !== userEmail.toLowerCase()) {
+        updatedFields.email = userEmail.toLowerCase();
+      }
+      if (existingUser.jobTitle !== (graphUser.jobTitle || "")) {
+        updatedFields.jobTitle = graphUser.jobTitle || "";
+      }
+      if (existingUser.department !== (graphUser.department || "")) {
+        updatedFields.department = graphUser.department || "";
+      }
+      if (existingUser.phone !== graphUser.mobilePhone) {
+        updatedFields.phone = graphUser.mobilePhone;
+      }
+      if (existingUser.address !== graphUser.streetAddress) {
+        updatedFields.address = graphUser.streetAddress;
+      }
+      if (existingUser.city !== graphUser.city) {
+        updatedFields.city = graphUser.city;
+      }
+      if (existingUser.state !== graphUser.state) {
+        updatedFields.state = graphUser.state;
+      }
+      if (existingUser.country !== graphUser.countryOrRegion) {
+        updatedFields.country = graphUser.countryOrRegion;
+      }
+      if (existingUser.postalCode !== graphUser.postalCode) {
+        updatedFields.postalCode = graphUser.postalCode;
+      }
+      if (JSON.stringify(existingUser.businessPhones) !== JSON.stringify(graphUser.businessPhones || [])) {
+        updatedFields.businessPhones = graphUser.businessPhones || [];
+      }
+
+      updatedFields.lastActiveAt = new Date();
+      updatedFields.isActive = graphUser.accountEnabled !== false;
+
+      if (Object.keys(updatedFields).length > 1) {
+        await User.updateOne(
+          { _id: existingUser._id },
+          { $set: updatedFields }
+        );
+        console.log(`🔄 Updated user: ${userEmail}`);
+      }
+
+      return { action: "updated", user: existingUser._id, email: userEmail };
+    }
+  } catch (error) {
+    console.error(`❌ Error syncing user ${principalId}:`, error.message);
+    throw error;
+  }
+};
+
+/**
+ * Remove users from Enterprise Application and local database
+ * Accepts array of user IDs (principalIds) and removes them from both
+ */
+const removeUsersFromApp = async (req, res) => {
+  let token;
+
+  try {
+    token = await getGraphAccessToken();
+  } catch (tokenError) {
+    console.error("❌ Failed to get access token:", tokenError.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to authenticate with Microsoft Graph API",
+      error: tokenError.message,
+    });
+  }
+
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "userIds array is required and must not be empty",
+      });
+    }
+
+    if (!process.env.SERVICE_PRINCIPAL_ID) {
+      return res.status(500).json({
+        success: false,
+        message: "SERVICE_PRINCIPAL_ID environment variable is missing",
+      });
+    }
+
+    const servicePrincipalId = process.env.SERVICE_PRINCIPAL_ID;
+    const results = [];
+    const stats = {
+      unassigned: 0,
+      deleted: 0,
+      signaturesDeleted: 0,
+      failed: 0,
+      notFound: 0,
+    };
+
+    console.log(`🔄 Removing ${userIds.length} users from Enterprise Application...`);
+
+    // Process each user
+    for (const userId of userIds) {
+      try {
+        // First, find the app role assignment ID for this user
+        const checkUrl = `https://graph.microsoft.com/v1.0/users/${userId}/appRoleAssignments?$filter=resourceId eq ${servicePrincipalId}`;
+
+        const checkResponse = await axios.get(checkUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const existingAssignments = checkResponse.data.value || [];
+
+        if (existingAssignments.length === 0) {
+          console.log(`⏭️ User ${userId} is not assigned to the application`);
+          stats.notFound++;
+          results.push({
+            userId,
+            status: "not_assigned",
+            message: "User is not assigned to the application",
+          });
+        } else {
+          // Delete each assignment (user might have multiple roles)
+          for (const assignment of existingAssignments) {
+            try {
+              const deleteUrl = `https://graph.microsoft.com/v1.0/users/${userId}/appRoleAssignments/${assignment.id}`;
+
+              await axios.delete(deleteUrl, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              console.log(`✅ Removed app role assignment ${assignment.id} for user ${userId}`);
+            } catch (deleteError) {
+              console.error(`❌ Error deleting assignment ${assignment.id}:`, deleteError.message);
+              // Continue with other assignments even if one fails
+            }
+          }
+
+          stats.unassigned++;
+          results.push({
+            userId,
+            status: "unassigned",
+            message: "User successfully unassigned from the application",
+          });
+        }
+
+        // Remove user from local database and delete signature configs
+        try {
+          const user = await User.findOne({
+            entraId: userId
+          });
+
+          if (user) {
+            // Delete all signature configurations for this user
+            // Signature configs can have user_id as either email or _id
+            const signatureDeleteResult = await OutlookSignature.deleteMany({
+              $or: [
+                { user_id: user.email },
+                { user_id: user._id.toString() }
+              ]
+            });
+
+            if (signatureDeleteResult.deletedCount > 0) {
+              console.log(`🗑️ Deleted ${signatureDeleteResult.deletedCount} signature config(s) for user ${user.email}`);
+              stats.signaturesDeleted += signatureDeleteResult.deletedCount;
+            }
+
+            // Hard delete (remove from database)
+            await User.findByIdAndDelete(user._id);
+
+            console.log(`🗑️ Deleted user ${user.email} (${user._id}) from local database`);
+            stats.deleted++;
+          } else {
+            console.log(`⚠️ User with entraId ${userId} not found in local database`);
+
+            // Even if user not found, try to delete signatures by entraId (in case user_id was stored as entraId)
+            try {
+              const signatureDeleteResult = await OutlookSignature.deleteMany({
+                user_id: userId
+              });
+              if (signatureDeleteResult.deletedCount > 0) {
+                console.log(`🗑️ Deleted ${signatureDeleteResult.deletedCount} signature config(s) for entraId ${userId}`);
+                stats.signaturesDeleted += signatureDeleteResult.deletedCount;
+              }
+            } catch (sigError) {
+              console.error(`⚠️ Error deleting signatures for entraId ${userId}:`, sigError.message);
+            }
+          }
+        } catch (dbError) {
+          console.error(`❌ Error deleting user from database:`, dbError.message);
+          // Don't fail the whole operation if DB delete fails
+        }
+
+      } catch (userError) {
+        console.error(`❌ Error removing user ${userId}:`, {
+          message: userError.message,
+          status: userError.response?.status,
+          statusText: userError.response?.statusText,
+          errorData: userError.response?.data,
+        });
+
+        stats.failed++;
+        results.push({
+          userId,
+          status: "failed",
+          message: userError.response?.data?.error?.message || userError.message,
+        });
+      }
+    }
+
+    // Record activity
+    const adminUserId = req.user?.userId;
+    await UserActivity.create({
+      action: "remove_users",
+      userId: adminUserId,
+      activityType: "admin_action",
+      metadata: {
+        action: "remove_users_from_app",
+        summary: `Removed ${stats.unassigned} users, deleted ${stats.deleted} from database, ${stats.failed} failed`,
+        stats: stats,
+      },
+      status: stats.failed === 0 ? "success" : "partial_success",
+      details: JSON.stringify(results),
+    });
+
+    console.log(`✅ Removal complete:`, stats);
+
+    res.json({
+      success: true,
+      message: "User removal completed",
+      data: {
+        results,
+        stats,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error removing users:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove users",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   initiateLogin,
   handleCallback,
@@ -1069,4 +1863,7 @@ module.exports = {
   getGraphAccessToken,
   fetchUsersFromGraph,
   syncUserFromGraph,
+  getAllEntraUsers,
+  assignUsersToApp,
+  removeUsersFromApp,
 };
