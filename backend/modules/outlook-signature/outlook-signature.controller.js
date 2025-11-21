@@ -86,8 +86,8 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     '%%Email%%': userProfile.mail || placeholders.Email || '',
     '%%MobileNumber%%': userProfile.mobilePhone || placeholders.MobileNumber || '',
     '%%FaxNumber%%': userProfile.faxNumber || placeholders.FaxNumber || '',
-    '%%PhoneNumber%%': userProfile.phoneNumber || placeholders.PhoneNumber || '',
-    '%%Street%%': userProfile.street || placeholders.Street || '',
+    '%%PhoneNumber%%': userProfile.phoneNumber || placeholders.PhoneNumber || '+65 6714 6714 Ext. 106',
+    '%%Street%%': userProfile.street || placeholders.Street || '3791 Jalan Bukit Merah #06-14 Singapore 159471',
     '%%City%%': userProfile.city || placeholders.City || '',
     '%%State%%': userProfile.state || placeholders.State || '',
     '%%PostalCode%%': userProfile.postalCode || placeholders.PostalCode || '',
@@ -107,8 +107,8 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     'EMAIL': userProfile.mail || placeholders.Email || '',
     'MOBILE': userProfile.mobilePhone || placeholders.MobileNumber || '',
     'FAX': userProfile.faxNumber || placeholders.FaxNumber || '',
-    'PHONE': userProfile.phoneNumber || placeholders.PhoneNumber || '',
-    'STREET': userProfile.street || placeholders.Street || '',
+    'PHONE': userProfile.phoneNumber || placeholders.PhoneNumber || '+65 6714 6714 Ext. 106',
+    'STREET': userProfile.street || placeholders.Street || '3791 Jalan Bukit Merah #06-14 Singapore 159471',
   };
 
   // Process each conditional block
@@ -155,7 +155,7 @@ class OutlookSignatureController {
       }
 
       const configs = await OutlookSignature.find({ user_id: userId })
-        .sort({ createdAt: -1 })
+        .sort({ signature_name: 1 })
         .lean();
 
       res.json({
@@ -780,7 +780,7 @@ ${jsCode}
   getAllConfigsAdmin = async (req, res) => {
     try {
       const configs = await OutlookSignature.find()
-        .sort({ createdAt: -1 })
+        .sort({ signature_name: 1 })
         .lean();
 
       res.json({
@@ -805,7 +805,7 @@ ${jsCode}
       const { userId } = req.params;
 
       const configs = await OutlookSignature.find({ user_id: userId })
-        .sort({ createdAt: -1 })
+        .sort({ signature_name: 1 })
         .lean();
 
       res.json({
@@ -1231,7 +1231,7 @@ function replacePlaceholders(template, userProfile) {
     '%%Email%%': userProfile.mail || '',
     '%%MobileNumber%%': userProfile.mobilePhone || '',
     '%%FaxNumber%%': userProfile.mobilePhone || '',
-    '%%PhoneNumber%%': userProfile.businessPhones || '',
+    '%%PhoneNumber%%': userProfile.businessPhones || '+65 6714 6714 Ext. 106',
     '%%Street%%': userProfile.streetAddress || '',
     '%%City%%': userProfile.city || '',
     '%%State%%': userProfile.state || '',
