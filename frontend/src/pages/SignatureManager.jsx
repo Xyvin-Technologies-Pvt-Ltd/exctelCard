@@ -47,10 +47,10 @@ const generateShortSignature = (userProfile) => {
   }
 
   // Landline (PhoneNumber) with icon - only add if it exists
-  if (userProfile.phoneNumber && userProfile.phoneNumber.trim()) {
-    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.phoneNumber}`;
+
+    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.phoneNumber||'+65 6714 6714'}`;
     parts.push(phonePart);
-  }
+  
 
   const shortSignatureText = parts.join(" | ");
 

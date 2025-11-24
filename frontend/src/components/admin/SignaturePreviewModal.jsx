@@ -17,36 +17,41 @@ const generateShortSignature = (userProfile) => {
   if (!userProfile) return "";
 
   const parts = [];
-  
+
   // Name
-  const fullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
+  const fullName = `${userProfile.firstName || ""} ${
+    userProfile.lastName || ""
+  }`.trim();
   if (fullName) parts.push(fullName);
-  
+
   // Job Title - only add if it exists
   if (userProfile.jobTitle && userProfile.jobTitle.trim()) {
     parts.push(userProfile.jobTitle);
   }
-  
+
   // Email with icon - only add if it exists
   if (userProfile.mail && userProfile.mail.trim()) {
-    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(userProfile.mail)}`;
+    const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(
+      userProfile.mail
+    )}`;
     parts.push(emailPart);
   }
-  
+
   // Mobile Phone with icon - only add if it exists
   if (userProfile.mobilePhone && userProfile.mobilePhone.trim()) {
     const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.mobilePhone}`;
     parts.push(mobilePart);
   }
-  
-  // Landline (PhoneNumber) with icon - only add if it exists
-  if (userProfile.phoneNumber && userProfile.phoneNumber.trim()) {
-    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.phoneNumber}`;
+
+  // Landline (PhoneNumber) with icon - include fallback telephone
+  const phoneNumber = userProfile.phoneNumber || "+65 6714 6714";
+  if (phoneNumber && phoneNumber.trim()) {
+    const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${phoneNumber}`;
     parts.push(phonePart);
   }
 
   const shortSignatureText = parts.join(" | ");
-  
+
   if (!shortSignatureText) return "";
 
   // Return HTML with Outlook-compatible inline styles
@@ -56,7 +61,13 @@ const generateShortSignature = (userProfile) => {
 /**
  * SignaturePreviewModal - Modal component for previewing and copying user signatures
  */
-const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail }) => {
+const SignaturePreviewModal = ({
+  isOpen,
+  onClose,
+  config,
+  userName,
+  userEmail,
+}) => {
   const [previewHtml, setPreviewHtml] = useState("");
   const [shortSignatureHtml, setShortSignatureHtml] = useState("");
   const [copyState, setCopyState] = useState("idle");
@@ -64,7 +75,11 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
   const [error, setError] = useState(null);
 
   // Fetch fresh user profile from Graph API
-  const { data: graphProfileData, isLoading: isLoadingProfile, error: profileError } = useQuery({
+  const {
+    data: graphProfileData,
+    isLoading: isLoadingProfile,
+    error: profileError,
+  } = useQuery({
     queryKey: ["user-profile-from-graph", config?.user_id],
     queryFn: () => getUserProfileFromGraphAdmin(config.user_id),
     enabled: isOpen && !!config?.user_id,
@@ -107,9 +122,10 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
         mail: userProfile.mail || "",
         mobilePhone: userProfile.mobilePhone || "",
         // Phone number logic: only include PhoneNumber if both mobilePhone and businessPhones exist
-        phoneNumber: (userProfile.mobilePhone && userProfile.businessPhones?.length > 0)
-          ? (userProfile.businessPhones[0] || "")
-          : "",
+        phoneNumber:
+          userProfile.mobilePhone && userProfile.businessPhones?.length > 0
+            ? userProfile.businessPhones[0] || ""
+            : "",
         faxNumber: userProfile.faxNumber || "", // Only use actual fax number, no fallback
         street: userProfile.street || "",
         city: userProfile.city || "",
@@ -211,7 +227,9 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Signature Preview</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Signature Preview
+              </h2>
               {userName && (
                 <p className="text-sm text-gray-600 mt-1">
                   {userName} {userEmail && `(${userEmail})`}
@@ -233,7 +251,9 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
               <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">
-                    {profileError?.response?.data?.message || profileError?.message || error}
+                    {profileError?.response?.data?.message ||
+                      profileError?.message ||
+                      error}
                   </span>
                 </div>
                 {profileError && (
@@ -257,7 +277,11 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
                 <SignaturePreview
                   html={shortSignatureHtml}
                   isLoading={isLoadingProfile || previewMutation.isPending}
-                  onCopy={shortSignatureHtml ? copyShortSignatureToClipboard : undefined}
+                  onCopy={
+                    shortSignatureHtml
+                      ? copyShortSignatureToClipboard
+                      : undefined
+                  }
                   copyState={shortCopyState}
                   title="Short Signature"
                 />
@@ -271,4 +295,3 @@ const SignaturePreviewModal = ({ isOpen, onClose, config, userName, userEmail })
 };
 
 export default SignaturePreviewModal;
-

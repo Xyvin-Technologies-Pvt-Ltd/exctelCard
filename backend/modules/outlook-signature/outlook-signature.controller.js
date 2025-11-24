@@ -72,6 +72,8 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
     This email and any attachments are confidential and intended solely for the use of the individual or entity to whom they are addressed. If you are not the intended recipient, please delete this message, notify the sender immediately, and note that any review, use, disclosure, or distribution of its contents is strictly prohibited. We accept no liability for any errors, delays, or security issues that may arise during the transmission of this email.
 </td></tr></table>`;
 
+
+
 /**
  * Replace placeholders in HTML template with actual values
  */
@@ -86,7 +88,7 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     '%%Email%%': userProfile.mail || placeholders.Email || '',
     '%%MobileNumber%%': userProfile.mobilePhone || placeholders.MobileNumber || '',
     '%%FaxNumber%%': userProfile.faxNumber || placeholders.FaxNumber || '',
-    '%%PhoneNumber%%': userProfile.phoneNumber || placeholders.PhoneNumber || '+65 6714 6714 Ext. 106',
+    '%%PhoneNumber%%': userProfile.phoneNumber || placeholders.PhoneNumber || '+65 6714 6714',
     '%%Street%%': userProfile.street || placeholders.Street || '3791 Jalan Bukit Merah #06-14 Singapore 159471',
     '%%City%%': userProfile.city || placeholders.City || '',
     '%%State%%': userProfile.state || placeholders.State || '',
@@ -107,7 +109,7 @@ function replacePlaceholders(template, userProfile, placeholders = {}) {
     'EMAIL': userProfile.mail || placeholders.Email || '',
     'MOBILE': userProfile.mobilePhone || placeholders.MobileNumber || '',
     'FAX': userProfile.faxNumber || placeholders.FaxNumber || '',
-    'PHONE': userProfile.phoneNumber || placeholders.PhoneNumber || '+65 6714 6714 Ext. 106',
+    'PHONE': userProfile.phoneNumber || placeholders.PhoneNumber || '+65 6714 6714',
     'STREET': userProfile.street || placeholders.Street || '3791 Jalan Bukit Merah #06-14 Singapore 159471',
   };
 
@@ -1231,7 +1233,7 @@ function replacePlaceholders(template, userProfile) {
     '%%Email%%': userProfile.mail || '',
     '%%MobileNumber%%': userProfile.mobilePhone || '',
     '%%FaxNumber%%': userProfile.mobilePhone || '',
-    '%%PhoneNumber%%': userProfile.businessPhones || '+65 6714 6714 Ext. 106',
+    '%%PhoneNumber%%': userProfile.businessPhones || '+65 6714 6714',
     '%%Street%%': userProfile.streetAddress || '',
     '%%City%%': userProfile.city || '',
     '%%State%%': userProfile.state || '',
