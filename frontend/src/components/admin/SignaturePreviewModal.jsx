@@ -16,46 +16,62 @@ const obfuscateEmail = (email) => {
 const generateShortSignature = (userProfile) => {
   if (!userProfile) return "";
 
-  const parts = [];
-
-  // Name
+  // First line: Name | Designation
+  const firstLineParts = [];
   const fullName = `${userProfile.firstName || ""} ${
     userProfile.lastName || ""
   }`.trim();
-  if (fullName) parts.push(fullName);
+  if (fullName) firstLineParts.push(fullName);
 
   // Job Title - only add if it exists
   if (userProfile.jobTitle && userProfile.jobTitle.trim()) {
-    parts.push(userProfile.jobTitle);
+    firstLineParts.push(userProfile.jobTitle);
   }
+
+  // Second line: Email | Mobile | Phone
+  const secondLineParts = [];
 
   // Email with icon - only add if it exists
   if (userProfile.mail && userProfile.mail.trim()) {
     const emailPart = `<img src="https://img.icons8.com/?size=100&id=blLagk1rxZGp&format=png&color=000000" alt="Email" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${obfuscateEmail(
       userProfile.mail
     )}`;
-    parts.push(emailPart);
+    secondLineParts.push(emailPart);
   }
 
   // Mobile Phone with icon - only add if it exists
   if (userProfile.mobilePhone && userProfile.mobilePhone.trim()) {
     const mobilePart = `<img src="https://img.icons8.com/?size=100&id=11471&format=png&color=000000" alt="Mobile" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${userProfile.mobilePhone}`;
-    parts.push(mobilePart);
+    secondLineParts.push(mobilePart);
   }
 
   // Landline (PhoneNumber) with icon - include fallback telephones
   const phoneNumber = userProfile.phoneNumber || "+65 6714 6714";
   if (phoneNumber && phoneNumber.trim()) {
     const phonePart = `<img src="https://img.icons8.com/?size=200&id=pjumbCENHfje&format=png&color=000000" alt="Landline" width="12" height="12" style="display:inline-block;vertical-align:middle;margin-right:4px;border:none;outline:none">${phoneNumber}`;
-    parts.push(phonePart);
+    secondLineParts.push(phonePart);
   }
 
-  const shortSignatureText = parts.join(" | ");
+  const firstLine = firstLineParts.join(" | ");
+  const secondLine = secondLineParts.join(" | ");
 
-  if (!shortSignatureText) return "";
+  // Build HTML with two lines
+  const lines = [];
+  if (firstLine) {
+    lines.push(
+      `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:15px;line-height:1.4;color:#333;margin:0;padding:0">${firstLine}</p>`
+    );
+  }
+  if (secondLine) {
+    lines.push(
+      `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:15px;line-height:1.4;color:#333;margin:0;padding:0">${secondLine}</p>`
+    );
+  }
+
+  if (lines.length === 0) return "";
 
   // Return HTML with Outlook-compatible inline styles
-  return `<p style="font-family:'AktivGrotesk',Arial,sans-serif;font-size:15px;line-height:1.4;color:#333;margin:0;padding:0">${shortSignatureText}</p>`;
+  return lines.join("");
 };
 
 /**
