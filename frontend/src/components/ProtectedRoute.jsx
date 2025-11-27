@@ -16,6 +16,7 @@ const ProtectedRoute = ({ children }) => {
     isLoading,
     user,
     token,
+    isInitialized,
     setLoading,
     setUser,
     setAuthenticated,
@@ -67,6 +68,20 @@ const ProtectedRoute = ({ children }) => {
         setAuthenticated(false);
         setLoading(false);
         hasVerified.current = true;
+        return;
+      }
+
+      // If token exists but not initialized yet, wait a moment for initialization
+      // This handles the race condition where token was just stored but state hasn't updated
+      if (storedToken && !isInitialized && !isAuthenticated) {
+        if (DEBUG_AUTH)
+          console.log(
+            `🔐 ProtectedRoute[${componentId.current}]: Token exists but not initialized, waiting...`
+          );
+        // Give a brief moment for initialization to complete
+        setTimeout(() => {
+          checkAuth();
+        }, 100);
         return;
       }
 
@@ -157,8 +172,8 @@ const ProtectedRoute = ({ children }) => {
     checkAuth();
   }, [location.pathname, location.search]); // Add location dependencies to re-check when route changes
 
-  // Show loading spinner while checking authentication
-  if (isLoading || isVerifying.current) {
+  // Show loading spinner while checking authentication or initializing
+  if (isLoading || isVerifying.current || (!isInitialized && localStorage.getItem("authToken"))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -169,8 +184,9 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  // Redirect to login if not authenticated (but only if we've initialized)
+  // This prevents premature redirects during the brief moment after token storage
+  if (!isAuthenticated && isInitialized) {
     if (DEBUG_AUTH)
       console.log(
         `🔐 ProtectedRoute[${componentId.current}]: Not authenticated, redirecting to login`

@@ -13,6 +13,9 @@ import {
   FaSync,
   FaTrash,
   FaEllipsisV,
+  FaSort,
+  FaSortUp,
+  FaSortDown,
 } from "react-icons/fa";
 import ActivityViewPopup from "../components/ActivityViewPopup";
 import QRCodeWithLogo from "../components/QRCodeWithLogo";
@@ -71,6 +74,8 @@ const Admin = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   // State for visible QR codes (lazy loading)
   const [visibleQRCodes, setVisibleQRCodes] = useState(new Set());
+  // State for Last Login sort direction
+  const [lastLoginSortDirection, setLastLoginSortDirection] = useState(null);
 
   // Debounce search query
   useEffect(() => {
@@ -154,6 +159,42 @@ const Admin = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleString();
+  };
+
+  // Handle Last Login sort toggle
+  const handleLastLoginSort = () => {
+    if (lastLoginSortDirection === null) {
+      setLastLoginSortDirection("asc");
+    } else if (lastLoginSortDirection === "asc") {
+      setLastLoginSortDirection("desc");
+    } else {
+      setLastLoginSortDirection(null);
+    }
+  };
+
+  // Sort users by Last Login
+  const getSortedUsers = () => {
+    if (!usersData?.users || lastLoginSortDirection === null) {
+      return usersData?.users || [];
+    }
+
+    const sortedUsers = [...usersData.users].sort((a, b) => {
+      const dateA = a.lastActiveAt ? new Date(a.lastActiveAt).getTime() : 0;
+      const dateB = b.lastActiveAt ? new Date(b.lastActiveAt).getTime() : 0;
+
+      // Handle null dates - place them at the end
+      if (dateA === 0 && dateB === 0) return 0;
+      if (dateA === 0) return 1;
+      if (dateB === 0) return -1;
+
+      if (lastLoginSortDirection === "asc") {
+        return dateA - dateB;
+      } else {
+        return dateB - dateA;
+      }
+    });
+
+    return sortedUsers;
   };
 
   // Handle search input change
@@ -473,7 +514,21 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Last Login
+                    <button
+                      onClick={handleLastLoginSort}
+                      className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                    >
+                      Last Login
+                      {lastLoginSortDirection === null && (
+                        <FaSort className="w-3 h-3 text-gray-400" />
+                      )}
+                      {lastLoginSortDirection === "asc" && (
+                        <FaSortUp className="w-3 h-3 text-gray-600" />
+                      )}
+                      {lastLoginSortDirection === "desc" && (
+                        <FaSortDown className="w-3 h-3 text-gray-600" />
+                      )}
+                    </button>
                   </th>
                   <th
                     scope="col"
@@ -490,7 +545,7 @@ body, table, td { font-family: "AktivGrotesk", Arial, sans-serif !important; }
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {usersData?.users?.map((user) => {
+                {getSortedUsers().map((user) => {
                   // Get or create ref for this user
                   if (!qrRefs.current[user._id]) {
                     qrRefs.current[user._id] = { current: null };

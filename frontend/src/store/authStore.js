@@ -18,11 +18,24 @@ export const useAuthStore = create(
 
     // Authentication Actions
     login: (userData, authToken) => {
-      // Store token in localStorage
+      // Store token in localStorage FIRST (synchronously)
       if (authToken) {
-        localStorage.setItem("authToken", authToken);
+        try {
+          localStorage.setItem("authToken", authToken);
+          // Verify the write was successful
+          const storedToken = localStorage.getItem("authToken");
+          if (storedToken !== authToken) {
+            console.error("❌ Failed to store token in localStorage");
+            throw new Error("Failed to store authentication token");
+          }
+          console.log("✅ Token stored in localStorage successfully");
+        } catch (error) {
+          console.error("❌ Error storing token:", error);
+          throw error;
+        }
       }
 
+      // Update state synchronously - ensure isInitialized is set immediately
       set({
         user: userData,
         token: authToken,
@@ -32,7 +45,7 @@ export const useAuthStore = create(
         isInitialized: true,
       });
 
-    
+      console.log("✅ Auth state updated - user:", userData?.email, "authenticated:", true);
     },
 
     logout: () => {

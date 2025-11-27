@@ -13,12 +13,19 @@ import {
   Eye,
   RefreshCw
 } from "lucide-react";
+import {
+  FaSort,
+  FaSortUp,
+  FaSortDown,
+} from "react-icons/fa";
 import SignaturePreviewModal from "./SignaturePreviewModal";
 
 const AdminSignatureManager = () => {
   const queryClient = useQueryClient();
   const [previewConfig, setPreviewConfig] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  // State for Created date sort direction
+  const [createdAtSortDirection, setCreatedAtSortDirection] = useState(null);
 
   // Fetch all signature configs
   const { data: configsData, isLoading: configsLoading, error: configsError } = useQuery({
@@ -71,6 +78,42 @@ const AdminSignatureManager = () => {
     const currentUsers = usersData?.users || [];
     const user = currentUsers.find(u => u.email === userId || u._id === userId);
     return user?.name || userId;
+  };
+
+  // Handle Created date sort toggle
+  const handleCreatedAtSort = () => {
+    if (createdAtSortDirection === null) {
+      setCreatedAtSortDirection("asc");
+    } else if (createdAtSortDirection === "asc") {
+      setCreatedAtSortDirection("desc");
+    } else {
+      setCreatedAtSortDirection(null);
+    }
+  };
+
+  // Sort configs by Created date
+  const getSortedConfigs = () => {
+    if (!configsData?.data || createdAtSortDirection === null) {
+      return configsData?.data || [];
+    }
+
+    const sortedConfigs = [...configsData.data].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+      // Handle null dates - place them at the end
+      if (dateA === 0 && dateB === 0) return 0;
+      if (dateA === 0) return 1;
+      if (dateB === 0) return -1;
+
+      if (createdAtSortDirection === "asc") {
+        return dateA - dateB;
+      } else {
+        return dateB - dateA;
+      }
+    });
+
+    return sortedConfigs;
   };
 
   return (
@@ -138,7 +181,21 @@ const AdminSignatureManager = () => {
                       Status
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
+                      <button
+                        onClick={handleCreatedAtSort}
+                        className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                      >
+                        Created
+                        {createdAtSortDirection === null && (
+                          <FaSort className="w-3 h-3 text-gray-400" />
+                        )}
+                        {createdAtSortDirection === "asc" && (
+                          <FaSortUp className="w-3 h-3 text-gray-600" />
+                        )}
+                        {createdAtSortDirection === "desc" && (
+                          <FaSortDown className="w-3 h-3 text-gray-600" />
+                        )}
+                      </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -146,7 +203,7 @@ const AdminSignatureManager = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {(configsData?.data || []).map((config) => (
+                  {getSortedConfigs().map((config) => (
                     <tr key={config._id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">

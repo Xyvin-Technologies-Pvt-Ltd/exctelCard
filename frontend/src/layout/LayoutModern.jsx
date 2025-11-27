@@ -12,9 +12,9 @@ const LayoutModern = ({ children }) => {
 
   // Use authenticated user data or fallback
   const currentUser = user || {
-    name: "Demo User",
-    email: "demo@example.com",
-    role: "admin",
+    name: "Loading...",
+    email: "",
+    role: "user",
   };
 
   const navigationItems = [
@@ -202,7 +202,7 @@ const LayoutModern = ({ children }) => {
             </div>
 
             {navigationItems.map((item) => {
-              if (item.adminOnly && currentUser.role !== "admin") {
+              if (item.adminOnly && currentUser?.role !== "admin") {
                 return null;
               }
               const isActive = location.pathname === item.path;
@@ -243,15 +243,15 @@ const LayoutModern = ({ children }) => {
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
                   <span className="font-semibold text-white text-sm">
-                    {user.name.charAt(0).toUpperCase()}
+                    {currentUser?.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {user.name}
+                  {currentUser?.name || "User"}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                <p className="text-xs text-gray-500 truncate">{currentUser?.email || ""}</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -377,15 +377,15 @@ const LayoutModern = ({ children }) => {
               <div className="flex items-center space-x-3">
                 <div className="hidden sm:block text-right">
                   <p className="text-sm font-medium text-gray-900">
-                    {user.name}
+                    {currentUser?.name || "User"}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
-                    {user.role}
+                    {currentUser?.role || "user"}
                   </p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
                   <span className="font-semibold text-white text-sm">
-                    {user.name.charAt(0).toUpperCase()}
+                    {currentUser?.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
               </div>

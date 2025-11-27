@@ -39,10 +39,35 @@ export const useAdminLoginMutation = () => {
     onSuccess: (data) => {
       if (data.success && data.token && data.user) {
         console.log("✅ Admin authenticated successfully:", data.user);
-        login(data.user, data.token);
-        navigate(data.user.role === "admin" ? "/admin" : "/profile");
+        console.log("🔐 Storing token and updating auth state...");
+        
+        try {
+          login(data.user, data.token);
+          
+          // Verify token is stored before navigation
+          const storedToken = localStorage.getItem("authToken");
+          if (!storedToken || storedToken !== data.token) {
+            console.error("❌ Token verification failed - token not properly stored");
+            setError("Failed to store authentication token. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          console.log("✅ Token stored and state updated. Navigating...");
+          
+          // Use setTimeout to ensure state update is complete before navigation
+          const targetRoute = data.user.role === "admin" ? "/admin" : "/profile";
+          setTimeout(() => {
+            navigate(targetRoute, { replace: true });
+          }, 0);
+        } catch (error) {
+          console.error("❌ Error during admin login process:", error);
+          setError("Failed to complete login: " + error.message);
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     },
     onError: (error) => {
       console.error("❌ Admin login error:", error);
@@ -68,18 +93,40 @@ export const useTokenVerificationMutation = () => {
 
       if (data.success && data.user) {
         console.log("✅ User authenticated successfully:", data.user);
-        console.log("✅ Storing token for future API calls");
+        console.log("🔐 Storing token and updating auth state...");
 
-        // Use the original token that was verified
-        login(data.user, originalToken);
-
-        // Clear the token from URL
+        // Clear the token from URL FIRST (before state update)
         window.history.replaceState({}, document.title, "/login");
-        navigate("/profile");
+
+        // Store token and update state - login() ensures localStorage write is complete
+        try {
+          login(data.user, originalToken);
+          
+          // Verify token is stored before navigation
+          const storedToken = localStorage.getItem("authToken");
+          if (!storedToken || storedToken !== originalToken) {
+            console.error("❌ Token verification failed - token not properly stored");
+            setError("Failed to store authentication token. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          console.log("✅ Token stored and state updated. Navigating to profile...");
+          
+          // Use setTimeout to ensure state update is complete before navigation
+          // This prevents race conditions with ProtectedRoute
+          setTimeout(() => {
+            navigate("/profile", { replace: true });
+          }, 0);
+        } catch (error) {
+          console.error("❌ Error during login process:", error);
+          setError("Failed to complete login: " + error.message);
+          setLoading(false);
+        }
       } else {
         setError("Authentication failed: " + (data.message || "Unknown error"));
+        setLoading(false);
       }
-      setLoading(false);
     },
     onError: (error) => {
       console.error("❌ Error processing token:", error);
