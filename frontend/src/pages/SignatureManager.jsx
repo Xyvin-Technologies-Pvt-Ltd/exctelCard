@@ -296,11 +296,10 @@ const SignatureManager = () => {
         companyName: userProfile.companyName || "Exctel",
         mail: userProfile.mail || "",
         mobilePhone: userProfile.mobilePhone || "",
-        // Phone number logic: only include PhoneNumber if both mobilePhone and businessPhones exist
         phoneNumber:
-          userProfile.mobilePhone && userProfile.businessPhones?.length > 0
+          Array.isArray(userProfile.businessPhones) && userProfile.businessPhones.length > 0
             ? userProfile.businessPhones[0] || ""
-            : "",
+            : userProfile.phoneNumber || "",
         faxNumber: userProfile.faxNumber || "", // Only use actual fax number, no fallback
         street: userProfile.street || "",
         city: userProfile.city || "",
