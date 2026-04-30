@@ -32,25 +32,27 @@ const styles = StyleSheet.create({
   },
   contentOverlay: {
     position: "relative",
-    paddingTop: 20,
-    paddingLeft: 40,
-    paddingRight: 16,
-    paddingBottom: 15,
+    paddingLeft: 28,
+    paddingRight: 8,
     width: PAGE_WIDTH,
     height: PAGE_HEIGHT,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
   },
   nameTitleContainer: {
     marginBottom: 12,
   },
   name: {
-    fontSize: 15,
+    fontSize: 11,
     fontWeight: "bold",
     color: "#111827",
     fontFamily: "Helvetica-Bold",
     marginBottom: 2,
   },
   title: {
-    fontSize: 11,
+    fontSize: 7,
+    lineHeight: 1.2,
     fontWeight: "bold",
     color: "#4B5563",
     fontFamily: "Helvetica-Bold",
@@ -64,12 +66,12 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   iconImage: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     marginRight: 6,
   },
   contactText: {
-    fontSize: 9,
+    fontSize: 7,
     color: "#374151",
     fontWeight: "bold",
     fontFamily: "Helvetica-Bold",
@@ -80,13 +82,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   addressIconImage: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     marginRight: 6,
     marginTop: 2,
   },
   addressText: {
-    fontSize: 9,
+    fontSize: 7,
     color: "#374151",
     fontWeight: "bold",
     fontFamily: "Helvetica-Bold",
@@ -123,7 +125,7 @@ const BusinessCardPDFDocument = ({ user, qrCodeData, cardBackImage, cardFrontIma
             {/* Name and Title */}
             <View style={styles.nameTitleContainer}>
               <Text style={styles.name}>{user?.name || "NOWSHAD HAMEED"}</Text>
-              <Text style={styles.title}>{user?.title || "Chief Executive Officer"}</Text>
+              <Text style={styles.title} maxLines={1}>{user?.title || "Chief Executive Officer"}</Text>
             </View>
 
             {/* Contact Information */}

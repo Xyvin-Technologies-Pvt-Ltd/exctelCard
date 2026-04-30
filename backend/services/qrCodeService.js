@@ -119,7 +119,8 @@ class QRCodeService {
    * @returns {string} - Complete share URL
    */
   generateShareUrl(shareId, baseUrl) {
-    return `${baseUrl}share/${shareId}`;
+    const base = String(baseUrl || "").replace(/\/+$/, "");
+    return `${base}/share/${shareId}`;
   }
 
   /**

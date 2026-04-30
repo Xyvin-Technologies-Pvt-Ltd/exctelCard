@@ -77,7 +77,7 @@ class QRCodeBackgroundService {
             });
 
             // Generate QR code data (client-side)
-            const qrUrl = `${window.location.protocol}//${window.location.hostname}/share/${user.shareId}`;
+            const qrUrl = `${window.location.origin}/share/${user.shareId}`;
 
             // Store the QR code data for later use
             this.generatedQRCodes.set(user._id, {
@@ -156,7 +156,7 @@ class QRCodeBackgroundService {
       });
 
       // Generate QR code data (client-side)
-      const qrUrl = `${window.location.protocol}//${window.location.hostname}/share/${user.shareId}`;
+      const qrUrl = `${window.location.origin}/share/${user.shareId}`;
 
       // Store the QR code data for later use
       this.generatedQRCodes.set(user._id, {

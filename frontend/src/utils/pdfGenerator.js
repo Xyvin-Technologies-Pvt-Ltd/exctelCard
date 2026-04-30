@@ -163,7 +163,7 @@ export const generateBusinessCardPDFSeparatePages = async (
         title: profile.jobTitle,
         email: profile.email,
         phone: profile.phone,
-        phone2: profile.phone2,
+        phone2: profile.phone2 || profile.businessPhones || "+65 6714 6714",
         address: profile.address,
       },
       qrCodeData: shareUrl || window.location.href,
