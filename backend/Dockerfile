@@ -8,16 +8,25 @@
 
 ARG NODE_VERSION=20
 
-FROM node:${NODE_VERSION}-alpine
+FROM node:${NODE_VERSION}-bookworm-slim
 
-# Use production node environment by default.
-ENV NODE_ENV production
-
+ENV NODE_ENV=production
 
 WORKDIR /usr/src/app
 
-# Install dependencies required to build native modules like canvas
-RUN apk add --no-cache python3 make g++ cairo-dev pango-dev giflib-dev
+# Runtime libraries needed by the prebuilt `canvas` binary.
+# (build tools intentionally omitted — canvas ships prebuilt for glibc)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libjpeg62-turbo \
+        libgif7 \
+        librsvg2-2 \
+        fontconfig \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
