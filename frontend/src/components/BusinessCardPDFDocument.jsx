@@ -1,5 +1,9 @@
 import React from "react";
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Document, Font, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+
+// Do not insert hyphen breaks inside words (e.g. "Singapore" vs "Sin-" + "gapore").
+// Only break at whitespace; overflowing words move entirely to the next line.
+Font.registerHyphenationCallback((word) => [word]);
 
 // Business card dimensions: 55mm x 85mm (portrait orientation - taller than wide)
 // Convert to points: 1mm = 2.83465 points (72 points per inch, 25.4mm per inch)
@@ -33,7 +37,7 @@ const styles = StyleSheet.create({
   contentOverlay: {
     position: "relative",
     paddingLeft: 28,
-    paddingRight: 8,
+    paddingRight: 28,
     width: PAGE_WIDTH,
     height: PAGE_HEIGHT,
     display: "flex",
@@ -109,6 +113,14 @@ const styles = StyleSheet.create({
   },
 });
 
+// Hyphen/minus chars that commonly appear in addresses (avoid line breaks inside "Al-Khobar").
+const hyphenLikeForPdfAddress = /[\u002D\u2010\u2012\u2013\u2014\u2212\uFE63\uFF0D]/g;
+
+const formatAddressForPdf = (addr = "") =>
+  addr
+    .replace(/\n/g, " ")
+    .replace(hyphenLikeForPdfAddress, "\u2011");
+
 const BusinessCardPDFDocument = ({ user, qrCodeData, cardBackImage, cardFrontImage, qrCodeImage, iconImages }) => {
   return (
     <Document>
@@ -166,7 +178,9 @@ const BusinessCardPDFDocument = ({ user, qrCodeData, cardBackImage, cardFrontIma
                   {iconImages?.mapPin && (
                     <Image src={iconImages.mapPin} style={styles.addressIconImage} />
                   )}
-                  <Text style={styles.addressText}>{user.address.replace(/\n/g, " ")}</Text>
+                  <Text style={styles.addressText}>
+                    {formatAddressForPdf(user.address)}
+                  </Text>
                 </View>
               )}
 
